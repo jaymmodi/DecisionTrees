@@ -4,9 +4,18 @@
 public class Feature {
 
     String name;
+    String featureType;
     double value;
     double giniValue;
     double infoGain;
+
+    public String getFeatureType() {
+        return featureType;
+    }
+
+    public void setFeatureType(String featureType) {
+        this.featureType = featureType;
+    }
 
     public double getValue() {
         return value;

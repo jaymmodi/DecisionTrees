@@ -10,7 +10,7 @@ public class DataSet {
     public ArrayList<String> featureTypes;
     public ArrayList<String> classLabels;
 
-//    public
+    public ArrayList<Instance> instances;
 
     public DataSet() {
     }
