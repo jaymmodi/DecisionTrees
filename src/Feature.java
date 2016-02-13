@@ -4,16 +4,16 @@
 public class Feature {
 
     String name;
-    String featureType;
+    String type;
     double giniValue;
     double infoGain;
 
-    public String getFeatureType() {
-        return featureType;
+    public String getType() {
+        return type;
     }
 
-    public void setFeatureType(String featureType) {
-        this.featureType = featureType;
+    public void setType(String type) {
+        this.type = type;
     }
 
     public String getName() {

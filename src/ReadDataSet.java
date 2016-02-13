@@ -62,19 +62,28 @@ public class ReadDataSet {
     private static DataSet readMetaData(DataSet dataSet) {
         try {
             BufferedReader br = new BufferedReader(new FileReader("metadata"));
+            ArrayList<Feature> features = new ArrayList<>();
+
             dataSet.pathToFile = br.readLine();
 
             dataSet.totalFeatures = Integer.parseInt(br.readLine());
 
             String lineSplit[] = br.readLine().split(",");
             ArrayList<String> nameList = new ArrayList<>();
-            Collections.addAll(nameList, lineSplit);
-            dataSet.featureNames = nameList;
+            Collections.addAll(nameList,lineSplit);
 
             lineSplit = br.readLine().split(",");
             ArrayList<String> featureType = new ArrayList<>();
-            Collections.addAll(featureType, lineSplit);
-            dataSet.featureTypes = featureType;
+            Collections.addAll(featureType,lineSplit);
+
+            for (int i = 0; i <nameList.size(); i++) {
+                Feature feature = new Feature();
+                feature.name = nameList.get(i);
+                feature.type = featureType.get(i);
+
+                features.add(feature);
+            }
+            dataSet.setFeatures(features);
 
             lineSplit = br.readLine().split(",");
             ArrayList<String> classLabels = new ArrayList<>();
