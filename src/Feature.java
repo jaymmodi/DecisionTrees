@@ -5,7 +5,6 @@ public class Feature {
 
     String name;
     String featureType;
-    double value;
     double giniValue;
     double infoGain;
 
@@ -15,14 +14,6 @@ public class Feature {
 
     public void setFeatureType(String featureType) {
         this.featureType = featureType;
-    }
-
-    public double getValue() {
-        return value;
-    }
-
-    public void setValue(double value) {
-        this.value = value;
     }
 
     public String getName() {

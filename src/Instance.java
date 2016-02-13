@@ -6,12 +6,8 @@ import java.util.List;
 public class Instance {
 
     int index;
-    List<Feature> row;
+    List<Double> featureValues;
     String classLabel;
-
-    public Instance(List<Feature> row) {
-        this.row = row;
-    }
 
     public String getClassLabel() {
         return classLabel;
@@ -29,11 +25,11 @@ public class Instance {
         this.index = index;
     }
 
-    public List<Feature> getRow() {
-        return row;
+    public List<Double> getFeatureValues() {
+        return featureValues;
     }
 
-    public void setRow(List<Feature> row) {
-        this.row = row;
+    public void setFeatureValues(List<Double> featureValues) {
+        this.featureValues = featureValues;
     }
 }
