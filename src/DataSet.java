@@ -6,11 +6,18 @@ import java.util.ArrayList;
 public class DataSet {
 
     public int totalFeatures;
-    public ArrayList<String> featureNames;
-    public ArrayList<String> featureTypes;
+    public ArrayList<Feature> features;
     public ArrayList<String> classLabels;
     public String pathToFile;
     public ArrayList<Instance> instances;
+
+    public ArrayList<Feature> getFeatures() {
+        return features;
+    }
+
+    public void setFeatures(ArrayList<Feature> features) {
+        this.features = features;
+    }
 
     public String getPathToFile() {
         return pathToFile;
@@ -26,22 +33,6 @@ public class DataSet {
 
     public void setTotalFeatures(int totalFeatures) {
         this.totalFeatures = totalFeatures;
-    }
-
-    public ArrayList<String> getFeatureNames() {
-        return featureNames;
-    }
-
-    public void setFeatureNames(ArrayList<String> featureNames) {
-        this.featureNames = featureNames;
-    }
-
-    public ArrayList<String> getFeatureTypes() {
-        return featureTypes;
-    }
-
-    public void setFeatureTypes(ArrayList<String> featureTypes) {
-        this.featureTypes = featureTypes;
     }
 
     public ArrayList<String> getClassLabels() {
