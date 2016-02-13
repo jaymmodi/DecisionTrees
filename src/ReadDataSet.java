@@ -1,6 +1,7 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -18,8 +19,34 @@ public class ReadDataSet {
 
         System.out.println("Total records = " + dataSet.getInstances().size());
 
-        DecisionTree decisionTree = new DecisionTree(dataSet);
+        System.out.println("Please provide the criteria to split on ");
+        System.out.println(" 1. GINI 2. InfoGain");
+
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        String splitOn = null;
+        try {
+            splitOn = br.readLine();
+            if(splitOn.equals("exit")){
+                System.exit(1);
+            }
+            splitOn = validateInput(splitOn);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        DecisionTree decisionTree = new DecisionTree(dataSet,splitOn);
         decisionTree.buildTree();
+    }
+
+    private static String validateInput(String splitOn) {
+        if(splitOn.equalsIgnoreCase("GINI") || splitOn.equals("1")){
+            return "GINI";
+        }else if(splitOn.equalsIgnoreCase("InfoGain") || splitOn.equals("2")){
+            return "InfoGain";
+        }
+        else{
+            return "exit";
+        }
     }
 
     private static DataSet readData(DataSet dataSet) {
