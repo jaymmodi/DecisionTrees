@@ -18,10 +18,8 @@ public class ReadDataSet {
 
         System.out.println("Total records = " + dataSet.getInstances().size());
 
-
-
-
-
+        DecisionTree decisionTree = new DecisionTree(dataSet);
+        decisionTree.buildTree();
     }
 
     private static DataSet readData(DataSet dataSet) {
