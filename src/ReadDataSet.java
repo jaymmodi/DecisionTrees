@@ -16,7 +16,9 @@ public class ReadDataSet {
         readMetaData(dataSet);
         readData(dataSet);
 
-        System.out.println(dataSet.getInstances().size());
+        System.out.println("Total records = " + dataSet.getInstances().size());
+
+
 
     }
 
