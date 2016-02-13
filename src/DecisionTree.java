@@ -9,6 +9,8 @@ public class DecisionTree {
 
     public DataSet dataset;
     public String splitOn;
+    public TreeNode root;
+
 
     public DecisionTree(DataSet dataSet, String splitOn) {
         this.dataset = dataSet;
@@ -20,15 +22,32 @@ public class DecisionTree {
 
         ArrayList<Feature> features = this.dataset.getFeatures();
 
-        for (Feature feature : features) {
-            //find the feature with low giniValue
+        features.get(0).setGiniValue(1.2);
+        features.get(1).setGiniValue(-1.2);
+        features.get(2).setGiniValue(10.2);
+        features.get(3).setGiniValue(100.2);
 
+//        for (Feature feature : features) {
+//            //find giniValue
+//
+//        }
+
+        sortOnSplitVariable(features, this.splitOn); // find feature with minimum gini value
+        Feature feature = getFeatureToSplit(features);
+        // make Tree node
+
+        if(this.root == null){
+            this.root = new TreeNode(dataset);
         }
+        this.root.setFeature(feature);
 
-        sortOnSplitVariable(features, this.splitOn);
-        // split on first node
+
         //divide data set among child nodes
 
+    }
+
+    private Feature getFeatureToSplit(ArrayList<Feature> features) {
+        return features.get(0);
     }
 
     private void sortOnSplitVariable(ArrayList<Feature> features, String splitOn) {

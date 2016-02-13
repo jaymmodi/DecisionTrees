@@ -8,12 +8,22 @@ public class TreeNode {
 
     public TreeNode parentNode;
     public List<TreeNode> childNodes;
-    public List<Instance> dataOnNode;
-    public String name;
     public HashMap<String,Integer> countPerClassLabel;
     public DataSet dataSet;
+    public Feature feature;
 
-    
+    public TreeNode(DataSet dataSet) {
+        this.dataSet = dataSet;
+    }
+
+    public Feature getFeature() {
+        return feature;
+    }
+
+    public void setFeature(Feature feature) {
+        this.feature = feature;
+    }
+
     public TreeNode getParentNode() {
         return parentNode;
     }
@@ -28,22 +38,6 @@ public class TreeNode {
 
     public void setChildNodes(List<TreeNode> childNodes) {
         this.childNodes = childNodes;
-    }
-
-    public List<Instance> getDataOnNode() {
-        return dataOnNode;
-    }
-
-    public void setDataOnNode(List<Instance> dataOnNode) {
-        this.dataOnNode = dataOnNode;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public HashMap<String, Integer> getCountPerClassLabel() {

@@ -7,6 +7,7 @@ public class Feature {
     String type;
     double giniValue;
     double infoGain;
+    DataSet dataSet;
 
     public String getType() {
         return type;
