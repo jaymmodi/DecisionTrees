@@ -1,5 +1,4 @@
 import java.util.HashMap;
-import java.util.List;
 
 /**
  * Created by jay on 2/12/16.
@@ -7,13 +6,17 @@ import java.util.List;
 public class TreeNode {
 
     public TreeNode parentNode;
-    public List<TreeNode> childNodes;
     public HashMap<String,Integer> countPerClassLabel;
     public DataSet dataSet;
     public Feature feature;
+    boolean isLeaf;
 
-    public TreeNode(DataSet dataSet) {
-        this.dataSet = dataSet;
+    public boolean isLeaf() {
+        return isLeaf;
+    }
+
+    public void setLeaf(boolean leaf) {
+        isLeaf = leaf;
     }
 
     public Feature getFeature() {
@@ -30,14 +33,6 @@ public class TreeNode {
 
     public void setParentNode(TreeNode parentNode) {
         this.parentNode = parentNode;
-    }
-
-    public List<TreeNode> getChildNodes() {
-        return childNodes;
-    }
-
-    public void setChildNodes(List<TreeNode> childNodes) {
-        this.childNodes = childNodes;
     }
 
     public HashMap<String, Integer> getCountPerClassLabel() {

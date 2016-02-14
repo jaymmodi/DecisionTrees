@@ -18,25 +18,13 @@ public class DecisionTree {
     }
 
     public void buildTree() {
-        System.out.println("Making Tree.. calculating first node to split on");
+        System.out.println("Making Tree.. finding node to split on");
 
         ArrayList<Feature> features = this.dataset.getFeatures();
 
-        features.get(0).setGiniValue(1.2);
-        features.get(1).setGiniValue(-1.2);
-        features.get(2).setGiniValue(10.2);
-        features.get(3).setGiniValue(100.2);
+        Feature feature = getFeatureToSplitOn(features);
 
-//        for (Feature feature : features) {
-//            //find giniValue
-//
-//        }
-
-        sortOnSplitVariable(features, this.splitOn); // find feature with minimum gini value
-        Feature feature = getFeatureToSplit(features);
-        // make Tree node
-
-        if(this.root == null){
+        if (this.root == null) {
             this.root = new TreeNode(dataset);
         }
         this.root.setFeature(feature);
@@ -46,8 +34,23 @@ public class DecisionTree {
 
     }
 
-    private Feature getFeatureToSplit(ArrayList<Feature> features) {
+    private Feature getFeatureToSplitOn(ArrayList<Feature> features) {
+        findGiniValue(features);
+
+        sortOnSplitVariable(features, this.splitOn); //sort in ascending order
         return features.get(0);
+    }
+
+    private void findGiniValue(ArrayList<Feature> features) {
+        features.get(0).setGiniValue(1.2);
+        features.get(1).setGiniValue(-1.2);
+        features.get(2).setGiniValue(10.2);
+        features.get(3).setGiniValue(100.2);
+
+//        for (Feature feature : features) {
+//            //find giniValue
+//
+//        }
     }
 
     private void sortOnSplitVariable(ArrayList<Feature> features, String splitOn) {
