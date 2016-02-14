@@ -102,7 +102,9 @@ public class ReadDataSet {
             Collections.addAll(featureType,lineSplit);
 
             for (int i = 0; i <nameList.size(); i++) {
-                Feature feature = new Feature();
+                Feature feature;
+
+                feature = featureType.get(i).equalsIgnoreCase("continuous") ? new ContinuousFeature(dataSet) : new CategoricalFeature(dataSet);
                 feature.name = nameList.get(i);
                 feature.type = featureType.get(i);
 
