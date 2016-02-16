@@ -129,7 +129,7 @@ public class DecisionTree {
         for (Instance instance : dataset.instances) {
             String label = instance.classLabel;
 
-            if (countMap.containsValue(label)) {
+            if (countMap.containsKey(label)) {
                 int count = countMap.get(label);
                 ++count;
                 countMap.put(label, count);
