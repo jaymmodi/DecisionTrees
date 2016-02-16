@@ -55,10 +55,10 @@ public class DecisionTree {
     }
 
     private TreeNode getTreeNode(DataSet dataset, Feature feature, TreeNode parent, String side) {
-        HashMap<String, Integer> countMap = getClassLabelCount(dataset, feature.splitValue, side);
-
         ArrayList<Feature> remainingFeatures = (ArrayList<Feature>) this.dataset.getRemainingFeatures(feature);
         Feature bestFeature = getFeatureToSplitOn(remainingFeatures);
+
+        HashMap<String, Integer> countMap = getClassLabelCount(dataset, bestFeature, side);
 
         TreeNode node = makeNode(bestFeature);
         node.feature = bestFeature;
@@ -76,24 +76,51 @@ public class DecisionTree {
         }
     }
 
-    private HashMap<String, Integer> getClassLabelCount(DataSet dataset, double splitValue, String side) {
+    private HashMap<String, Integer> getClassLabelCount(DataSet dataset, Feature feature, String side) {
         HashMap<String, Integer> countMap = new HashMap<>();
 
         if (side.equalsIgnoreCase("root")) {
             countMap = dataForRoot(dataset);
         } else if (side.equalsIgnoreCase("left")) {
-            countMap = dataForChild(dataset, splitValue, side);
+            countMap = dataForChild(dataset, feature, side);
         } else if (side.equalsIgnoreCase("right")) {
-            countMap = dataForChild(dataset, splitValue, side);
+            countMap = dataForChild(dataset, feature, side);
         }
 
         return countMap;
     }
 
-    private HashMap<String, Integer> dataForChild(DataSet dataset, double splitValue, String side) {
-        
+    private HashMap<String, Integer> dataForChild(DataSet dataset, Feature feature, String side) {
+        HashMap<String,Integer> countMap = new HashMap<>();
 
-        return null;
+        if(side.equalsIgnoreCase("left")){           // <=
+            for (Instance instance : dataset.instances) {
+                List<Double> values = instance.featureValues;
+                if(values.get(feature.index) <= feature.splitValue){
+                    insertInMap(instance.classLabel,countMap);
+                }
+            }
+
+        }else{
+            for (Instance instance : dataset.instances) {
+                List<Double> values = instance.featureValues;
+                if(values.get(feature.index) > feature.splitValue){
+                    insertInMap(instance.classLabel,countMap);
+                }
+            }
+        }
+
+        return countMap;
+    }
+
+    private void insertInMap(String classLabel, HashMap<String, Integer> countMap) {
+        if(countMap.containsKey(classLabel)){
+            int count = countMap.get(classLabel);
+            ++count;
+            countMap.put(classLabel,count);
+        }else{
+            countMap.put(classLabel,1);
+        }
     }
 
     private HashMap<String, Integer> dataForRoot(DataSet dataset) {
@@ -110,6 +137,7 @@ public class DecisionTree {
                 countMap.put(label, 1);
             }
         }
+        return countMap;
     }
 
     private Feature getFeatureToSplitOn(ArrayList<Feature> features) {
@@ -129,6 +157,8 @@ public class DecisionTree {
 //            //find giniValue
 //
 //        }
+
+        // calculate split value as well
     }
 
     private void sortOnSplitVariable(ArrayList<Feature> features, String splitOn) {
