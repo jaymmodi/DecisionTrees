@@ -23,7 +23,9 @@ public class DecisionTree {
 
         while (!queue.isEmpty()) {
             TreeNode node = queue.poll();
-            makeChildNodes(node, queue);
+            if (!node.isLeaf()) {
+                makeChildNodes(node, queue);
+            }
         }
 
         return root;
@@ -151,27 +153,46 @@ public class DecisionTree {
     }
 
     private ArrayList<Feature> findGiniValue(ArrayList<Feature> features) {
+
         for (Feature feature : features) {
             int index = feature.index;
 
             sortFeature(index);
-            feature.giniValue = Double.MAX_VALUE;
-
+            ArrayList<GiniSplit> minGiniPerFeature = new ArrayList<>();
             ArrayList<Instance> instances = this.dataset.instances;
+
             for (int i = 0; i <= instances.size() - 2; i++) {
                 Instance instance1 = instances.get(i);
                 Instance instance2 = instances.get(i + 1);
 
                 if (!instance1.classLabel.equals(instance2.classLabel)) {
+                    GiniSplit giniSplit = new GiniSplit();
+                    giniSplit.splitValue = (instance1.featureValues.get(index) + instance2.featureValues.get(index)) / 2;
+                    giniSplit.giniValue = getGiniValue(giniSplit.splitValue, index);
+                    minGiniPerFeature.add(giniSplit);
 
-                    feature.splitValue = instance1.featureValues.get(index) + instance2.featureValues.get(index) / 2;
-                    feature.giniValue = Math.min(getGiniValue(feature.splitValue, index), feature.giniValue);
                 }
             }
+            GiniSplit minGini = findMinGini(minGiniPerFeature);
+            feature.giniValue = minGini.giniValue;
+            feature.splitValue = minGini.splitValue;
+
         }
 
-        // calculate split value as well
         return features;
+    }
+
+    private GiniSplit findMinGini(ArrayList<GiniSplit> minGiniPerFeature) {
+        GiniSplit minGiniFeature = null;
+        double min = Double.MAX_VALUE;
+
+        for (GiniSplit giniSplit : minGiniPerFeature) {
+            if (giniSplit.giniValue <= min) {
+                minGiniFeature = giniSplit;
+                min = giniSplit.giniValue;
+            }
+        }
+        return minGiniFeature;
     }
 
     private double getGiniValue(double splitValue, int index) {
@@ -197,14 +218,14 @@ public class DecisionTree {
         double partialG1 = calculateGini(countLessThanMap, lessThanCount);
         double partialG2 = calculateGini(countMoreThanMap, moreThanCount);
 
-        return (partialG1 * lessThanCount) + (partialG2 * moreThanCount) / (lessThanCount + moreThanCount);
+        return ((partialG1 * lessThanCount) + (partialG2 * moreThanCount)) / (lessThanCount + moreThanCount);
 
     }
 
     private double calculateGini(HashMap<String, Integer> map, int totalCount) {
         double value = 0;
         for (Map.Entry<String, Integer> entry : map.entrySet()) {
-            value += entry.getValue() / (double) totalCount;
+            value += Math.pow((entry.getValue() / (double) totalCount), 2);
         }
         return 1 - value;
     }
