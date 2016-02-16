@@ -91,21 +91,21 @@ public class DecisionTree {
     }
 
     private HashMap<String, Integer> dataForChild(DataSet dataset, Feature feature, String side) {
-        HashMap<String,Integer> countMap = new HashMap<>();
+        HashMap<String, Integer> countMap = new HashMap<>();
 
-        if(side.equalsIgnoreCase("left")){           // <=
+        if (side.equalsIgnoreCase("left")) {           // <=
             for (Instance instance : dataset.instances) {
                 List<Double> values = instance.featureValues;
-                if(values.get(feature.index) <= feature.splitValue){
-                    insertInMap(instance.classLabel,countMap);
+                if (values.get(feature.index) <= feature.splitValue) {
+                    insertInMap(instance.classLabel, countMap);
                 }
             }
 
-        }else{
+        } else {
             for (Instance instance : dataset.instances) {
                 List<Double> values = instance.featureValues;
-                if(values.get(feature.index) > feature.splitValue){
-                    insertInMap(instance.classLabel,countMap);
+                if (values.get(feature.index) > feature.splitValue) {
+                    insertInMap(instance.classLabel, countMap);
                 }
             }
         }
@@ -114,12 +114,12 @@ public class DecisionTree {
     }
 
     private void insertInMap(String classLabel, HashMap<String, Integer> countMap) {
-        if(countMap.containsKey(classLabel)){
+        if (countMap.containsKey(classLabel)) {
             int count = countMap.get(classLabel);
             ++count;
-            countMap.put(classLabel,count);
-        }else{
-            countMap.put(classLabel,1);
+            countMap.put(classLabel, count);
+        } else {
+            countMap.put(classLabel, 1);
         }
     }
 
@@ -129,36 +129,104 @@ public class DecisionTree {
         for (Instance instance : dataset.instances) {
             String label = instance.classLabel;
 
-            if (countMap.containsKey(label)) {
-                int count = countMap.get(label);
-                ++count;
-                countMap.put(label, count);
-            } else {
-                countMap.put(label, 1);
-            }
+            insertInMap(label, countMap);
         }
         return countMap;
     }
 
     private Feature getFeatureToSplitOn(ArrayList<Feature> features) {
-        findGiniValue(features);
+        if (this.splitOn.equalsIgnoreCase("GINI") || this.splitOn.equals("1")) {
+            features = findGiniValue(features);
+        } else {
+            features = findInfoGain(features);
+        }
 
         sortOnSplitVariable(features, this.splitOn); //sort in ascending order
         return features.get(0);
     }
 
-    private void findGiniValue(ArrayList<Feature> features) {
-        features.get(0).setGiniValue(1.2);
-        features.get(1).setGiniValue(-1.2);
-        features.get(2).setGiniValue(10.2);
-        features.get(3).setGiniValue(100.2);
+    private ArrayList<Feature> findInfoGain(ArrayList<Feature> features) {
 
-//        for (Feature feature : features) {
-//            //find giniValue
-//
-//        }
+        return features;
+    }
+
+    private ArrayList<Feature> findGiniValue(ArrayList<Feature> features) {
+        for (Feature feature : features) {
+            int index = feature.index;
+
+            sortFeature(index);
+            feature.giniValue = Double.MAX_VALUE;
+
+            ArrayList<Instance> instances = this.dataset.instances;
+            for (int i = 0; i <= instances.size() - 2; i++) {
+                Instance instance1 = instances.get(i);
+                Instance instance2 = instances.get(i + 1);
+
+                if (!instance1.classLabel.equals(instance2.classLabel)) {
+
+                    feature.splitValue = instance1.featureValues.get(index) + instance2.featureValues.get(index) / 2;
+                    feature.giniValue = Math.min(getGiniValue(feature.splitValue, index), feature.giniValue);
+                }
+            }
+        }
 
         // calculate split value as well
+        return features;
+    }
+
+    private double getGiniValue(double splitValue, int index) {
+
+        HashMap<String, Integer> countLessThanMap = new HashMap<>();
+        HashMap<String, Integer> countMoreThanMap = new HashMap<>();
+        ArrayList<Instance> instances = this.dataset.instances;
+
+        for (Instance instance : instances) {
+            double value = instance.featureValues.get(index);
+            String label = instance.classLabel;
+
+            if (value <= splitValue) {
+                insertInMap(label, countLessThanMap);
+            } else {
+                insertInMap(label, countMoreThanMap);
+            }
+        }
+
+        int lessThanCount = count(countLessThanMap);
+        int moreThanCount = count(countMoreThanMap);
+
+        double partialG1 = calculateGini(countLessThanMap, lessThanCount);
+        double partialG2 = calculateGini(countMoreThanMap, moreThanCount);
+
+        return (partialG1 * lessThanCount) + (partialG2 * moreThanCount) / (lessThanCount + moreThanCount);
+
+    }
+
+    private double calculateGini(HashMap<String, Integer> map, int totalCount) {
+        double value = 0;
+        for (Map.Entry<String, Integer> entry : map.entrySet()) {
+            value += entry.getValue() / (double) totalCount;
+        }
+        return 1 - value;
+    }
+
+    private int count(HashMap<String, Integer> map) {
+        int count = 0;
+        for (Map.Entry<String, Integer> stringIntegerEntry : map.entrySet()) {
+            count += stringIntegerEntry.getValue();
+        }
+        return count;
+    }
+
+    private void sortFeature(int index) {
+        Collections.sort(this.dataset.instances, (instance1, instance2) -> {
+            if (instance1.featureValues.get(index) > instance2.featureValues.get(index)) {
+                return 1;
+            } else if (instance1.featureValues.get(index) < instance2.featureValues.get(index)) {
+                return -1;
+            } else {
+                return 0;
+            }
+        });
     }
 
     private void sortOnSplitVariable(ArrayList<Feature> features, String splitOn) {
