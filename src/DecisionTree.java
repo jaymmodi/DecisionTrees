@@ -1,5 +1,4 @@
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.*;
 
 /**
  * Created by jay on 2/12/16.
@@ -9,7 +8,6 @@ public class DecisionTree {
 
     public DataSet dataset;
     public String splitOn;
-    public TreeNode root;
 
 
     public DecisionTree(DataSet dataSet, String splitOn) {
@@ -17,21 +15,76 @@ public class DecisionTree {
         this.splitOn = splitOn;
     }
 
-    public void buildTree() {
-        System.out.println("Making Tree.. finding node to split on");
+    public TreeNode buildTree(TreeNode root) {
+        Queue<TreeNode> queue = new LinkedList<>();
 
-        ArrayList<Feature> features = this.dataset.getFeatures();
+        root = getTreeNode(this.dataset, null, null, "root");
+        queue.add(root);
 
-        Feature feature = getFeatureToSplitOn(features);
-
-        if (this.root == null) {
-            this.root = new TreeNode(dataset);
+        while (!queue.isEmpty()) {
+            TreeNode node = queue.poll();
+            makeChildNodes(node,queue);
         }
-        this.root.setFeature(feature);
 
+        return root;
+    }
 
-        //divide data set among child nodes
+    private void makeChildNodes(TreeNode node, Queue<TreeNode> queue) {
+        Feature feature = node.feature;
 
+        if(feature.getType().equalsIgnoreCase("Continuous")){
+            makeContinuousChildNodes(node,queue);
+        }else{
+            makeCategoricalChildNodes(node,queue);
+        }
+    }
+
+    private void makeCategoricalChildNodes(TreeNode node, Queue<TreeNode> queue) {
+
+    }
+
+    private void makeContinuousChildNodes(TreeNode node, Queue<TreeNode> queue) {
+        ContinuousTreeNode continuousTreeNode = (ContinuousTreeNode) node;
+        Feature feature = node.feature;
+
+        continuousTreeNode.leftNode = getTreeNode(this.dataset,feature,node,"left");
+        queue.add(continuousTreeNode.leftNode);
+
+        continuousTreeNode.rightNode = getTreeNode(this.dataset,feature,node,"right");
+        queue.add(continuousTreeNode.rightNode);
+    }
+
+    private TreeNode getTreeNode(DataSet dataset, Feature feature, TreeNode parent, String side) {
+        HashMap<String, Integer> countMap = getClassLabelCount(dataset, feature.splitValue,side);
+
+        ArrayList<Feature> remainingFeatures = (ArrayList<Feature>) this.dataset.getRemainingFeatures(feature);
+        Feature bestFeature = getFeatureToSplitOn(remainingFeatures);
+
+        TreeNode node = makeNode(bestFeature);
+        node.feature = bestFeature;
+        node.setCountPerClassLabel(countMap);
+        node.parentNode = parent;
+
+        return node;
+    }
+
+    private TreeNode makeNode(Feature bestFeature) {
+        if (bestFeature.getType().equalsIgnoreCase("Continuous")) {
+            return new ContinuousTreeNode(this.dataset);
+        } else {
+            return new CategoricalTreeNode(this.dataset);
+        }
+    }
+
+    private HashMap<String, Integer> getClassLabelCount(DataSet dataset, double splitValue, String side) {
+        if(side.equalsIgnoreCase("root")){
+            return null;
+        }else if(side.equalsIgnoreCase("left")){
+            return null;
+        }else if(side.equalsIgnoreCase("right")){
+            return null;
+        }
+        return null;
     }
 
     private Feature getFeatureToSplitOn(ArrayList<Feature> features) {
@@ -82,4 +135,6 @@ public class DecisionTree {
             System.out.println(feature.giniValue);
         }
     }
+
+
 }

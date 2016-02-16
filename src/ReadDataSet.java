@@ -35,7 +35,8 @@ public class ReadDataSet {
         }
 
         DecisionTree decisionTree = new DecisionTree(dataSet,splitOn);
-        decisionTree.buildTree();
+        TreeNode treeNode = null;
+        treeNode = decisionTree.buildTree(treeNode);
     }
 
     private static String validateInput(String splitOn) {
@@ -107,6 +108,7 @@ public class ReadDataSet {
                 feature = featureType.get(i).equalsIgnoreCase("continuous") ? new ContinuousFeature(dataSet) : new CategoricalFeature(dataSet);
                 feature.name = nameList.get(i);
                 feature.type = featureType.get(i);
+                feature.index = i;
 
                 features.add(feature);
             }

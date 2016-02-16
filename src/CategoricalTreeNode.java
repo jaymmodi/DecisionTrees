@@ -4,6 +4,6 @@
 public class CategoricalTreeNode extends TreeNode {
 
     public CategoricalTreeNode(DataSet dataSet) {
-        this.dataSet = dataSet;
+        super(dataSet);
     }
 }

@@ -8,6 +8,16 @@ public class Feature {
     double giniValue;
     double infoGain;
     DataSet dataSet;
+    int index;
+    double splitValue;
+
+    public int getIndex() {
+        return index;
+    }
+
+    public void setIndex(int index) {
+        this.index = index;
+    }
 
     public String getType() {
         return type;

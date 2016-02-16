@@ -3,20 +3,22 @@
  */
 public class ContinuousTreeNode extends TreeNode {
 
-    double value;
-    public TreeNode leftNode;
-    public TreeNode rightNode;
+    double splitValue;
+    public TreeNode leftNode;    // <= splitValue
+    public TreeNode rightNode;   // > splitValue
 
     public ContinuousTreeNode(DataSet dataSet) {
-        this.dataSet = dataSet;
+        super(dataSet);
+        this.leftNode = null;
+        this.rightNode = null;
     }
 
-    public double getValue() {
-        return value;
+    public double getSplitValue() {
+        return splitValue;
     }
 
-    public void setValue(double value) {
-        this.value = value;
+    public void setSplitValue(double splitValue) {
+        this.splitValue = splitValue;
     }
 
     public TreeNode getLeftNode() {
