@@ -23,7 +23,7 @@ public class DecisionTree {
 
         while (!queue.isEmpty()) {
             TreeNode node = queue.poll();
-            makeChildNodes(node,queue);
+            makeChildNodes(node, queue);
         }
 
         return root;
@@ -32,10 +32,10 @@ public class DecisionTree {
     private void makeChildNodes(TreeNode node, Queue<TreeNode> queue) {
         Feature feature = node.feature;
 
-        if(feature.getType().equalsIgnoreCase("Continuous")){
-            makeContinuousChildNodes(node,queue);
-        }else{
-            makeCategoricalChildNodes(node,queue);
+        if (feature.getType().equalsIgnoreCase("Continuous")) {
+            makeContinuousChildNodes(node, queue);
+        } else {
+            makeCategoricalChildNodes(node, queue);
         }
     }
 
@@ -47,15 +47,15 @@ public class DecisionTree {
         ContinuousTreeNode continuousTreeNode = (ContinuousTreeNode) node;
         Feature feature = node.feature;
 
-        continuousTreeNode.leftNode = getTreeNode(this.dataset,feature,node,"left");
+        continuousTreeNode.leftNode = getTreeNode(this.dataset, feature, node, "left");
         queue.add(continuousTreeNode.leftNode);
 
-        continuousTreeNode.rightNode = getTreeNode(this.dataset,feature,node,"right");
+        continuousTreeNode.rightNode = getTreeNode(this.dataset, feature, node, "right");
         queue.add(continuousTreeNode.rightNode);
     }
 
     private TreeNode getTreeNode(DataSet dataset, Feature feature, TreeNode parent, String side) {
-        HashMap<String, Integer> countMap = getClassLabelCount(dataset, feature.splitValue,side);
+        HashMap<String, Integer> countMap = getClassLabelCount(dataset, feature.splitValue, side);
 
         ArrayList<Feature> remainingFeatures = (ArrayList<Feature>) this.dataset.getRemainingFeatures(feature);
         Feature bestFeature = getFeatureToSplitOn(remainingFeatures);
@@ -77,14 +77,39 @@ public class DecisionTree {
     }
 
     private HashMap<String, Integer> getClassLabelCount(DataSet dataset, double splitValue, String side) {
-        if(side.equalsIgnoreCase("root")){
-            return null;
-        }else if(side.equalsIgnoreCase("left")){
-            return null;
-        }else if(side.equalsIgnoreCase("right")){
-            return null;
+        HashMap<String, Integer> countMap = new HashMap<>();
+
+        if (side.equalsIgnoreCase("root")) {
+            countMap = dataForRoot(dataset);
+        } else if (side.equalsIgnoreCase("left")) {
+            countMap = dataForChild(dataset, splitValue, side);
+        } else if (side.equalsIgnoreCase("right")) {
+            countMap = dataForChild(dataset, splitValue, side);
         }
+
+        return countMap;
+    }
+
+    private HashMap<String, Integer> dataForChild(DataSet dataset, double splitValue, String side) {
+        
+
         return null;
+    }
+
+    private HashMap<String, Integer> dataForRoot(DataSet dataset) {
+        HashMap<String, Integer> countMap = new HashMap<>();
+
+        for (Instance instance : dataset.instances) {
+            String label = instance.classLabel;
+
+            if (countMap.containsValue(label)) {
+                int count = countMap.get(label);
+                ++count;
+                countMap.put(label, count);
+            } else {
+                countMap.put(label, 1);
+            }
+        }
     }
 
     private Feature getFeatureToSplitOn(ArrayList<Feature> features) {
