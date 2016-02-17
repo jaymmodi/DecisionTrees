@@ -9,10 +9,6 @@ public class CategoricalFeature extends Feature {
     public List<Double> uniqueValues;
     public HashMap<Double,Integer> countPerUniqueValue;
 
-    public CategoricalFeature(DataSet dataSet) {
-        this.dataSet = dataSet;
-    }
-
     public List<Double> getUniqueValues() {
         return uniqueValues;
     }

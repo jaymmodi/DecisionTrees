@@ -7,7 +7,6 @@ public class Feature {
     String type;
     double giniValue;
     double infoGain;
-    DataSet dataSet;
     int index;
     double splitValue;
 
