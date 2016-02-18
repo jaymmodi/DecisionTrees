@@ -141,6 +141,18 @@ public class DecisionTree {
         HashMap<String, Integer> countMoreThanMap = new HashMap<>();
         ArrayList<Instance> instances = this.dataset.instances;
 
+        makeChildrenMap(splitValue, index, countLessThanMap, countMoreThanMap, instances);
+
+        int lessThanCount = count(countLessThanMap);
+        int moreThanCount = count(countMoreThanMap);
+
+        double partialInfo1 = calculateInfo(countLessThanMap, lessThanCount);
+        double partialInfo2 = calculateInfo(countMoreThanMap, moreThanCount);
+
+        return ((partialInfo1 * lessThanCount) + (partialInfo2 * moreThanCount)) / (lessThanCount + moreThanCount);
+    }
+
+    private void makeChildrenMap(double splitValue, int index, HashMap<String, Integer> countLessThanMap, HashMap<String, Integer> countMoreThanMap, ArrayList<Instance> instances) {
         for (Instance instance : instances) {
             double value = instance.featureValues.get(index);
             String label = instance.classLabel;
@@ -151,14 +163,6 @@ public class DecisionTree {
                 insertInMap(label, countMoreThanMap);
             }
         }
-
-        int lessThanCount = count(countLessThanMap);
-        int moreThanCount = count(countMoreThanMap);
-
-        double partialInfo1 = calculateInfo(countLessThanMap, lessThanCount);
-        double partialInfo2 = calculateInfo(countMoreThanMap, moreThanCount);
-
-        return ((partialInfo1 * lessThanCount) + (partialInfo2 * moreThanCount)) / (lessThanCount + moreThanCount);
     }
 
     private double calculateInfo(HashMap<String, Integer> map, int totalCount) {
@@ -252,16 +256,7 @@ public class DecisionTree {
         HashMap<String, Integer> countMoreThanMap = new HashMap<>();
         ArrayList<Instance> instances = this.dataset.instances;
 
-        for (Instance instance : instances) {
-            double value = instance.featureValues.get(index);
-            String label = instance.classLabel;
-
-            if (value <= splitValue) {
-                insertInMap(label, countLessThanMap);
-            } else {
-                insertInMap(label, countMoreThanMap);
-            }
-        }
+        makeChildrenMap(splitValue, index, countLessThanMap, countMoreThanMap, instances);
 
         int lessThanCount = count(countLessThanMap);
         int moreThanCount = count(countMoreThanMap);
