@@ -16,10 +16,13 @@ public class DecisionTree {
         this.splitOn = splitOn;
     }
 
+
     public TreeNode buildTree(TreeNode root) {
         Queue<TreeNode> queue = new LinkedList<>();
 
-        root = getTreeNode(this.dataset, null, null, "root");
+        root = getNode(this.dataset.instances, null, null, "root");
+        root.recordsOnNode= this.dataset.instances;
+
         queue.add(root);
 
         while (!queue.isEmpty()) {
@@ -30,6 +33,87 @@ public class DecisionTree {
         }
 
         return root;
+    }
+
+    private TreeNode getNode(ArrayList<Instance> instances, TreeNode parent, Feature feature, String side) {
+        ArrayList<Feature> remainingFeatures = (ArrayList<Feature>) this.dataset.getRemainingFeatures(feature);
+
+        Feature bestFeature = getSplit(instances, remainingFeatures);
+
+        HashMap<String, Integer> countMap = getClassLabelCount(instances, side);
+
+        TreeNode node = makeNode(bestFeature);
+        node.feature = bestFeature;
+        node.setCountPerClassLabel(countMap);
+        node.parentNode = parent;
+        node.label = bestFeature.getName();
+        node.isLeaf = (node.countPerClassLabel.size() == 1);
+
+        return node;
+    }
+
+    private ArrayList<ArrayList<Instance>> splitData(List<Instance> recordsOnNode, Feature bestFeature) {
+
+        ArrayList<ArrayList<Instance>> childDatasets = new ArrayList<>();
+        double spliValue = bestFeature.splitValue;
+        int index = bestFeature.index;
+
+        if (bestFeature.getType().equalsIgnoreCase("Continuous")) {
+            ArrayList<Instance> instances = (ArrayList<Instance>) recordsOnNode;
+
+            ArrayList<Instance> leftInstances = instances.stream()
+                    .filter(instance -> instance.featureValues.get(index) <= spliValue)
+                    .collect(Collectors.toCollection(ArrayList::new));
+
+            ArrayList<Instance> rightInstances = instances.stream()
+                    .filter(instance -> instance.featureValues.get(index) > spliValue)
+                    .collect(Collectors.toCollection(ArrayList::new));
+            childDatasets.add(leftInstances);
+            childDatasets.add(rightInstances);
+        } else {
+
+        }
+        return childDatasets;
+    }
+
+    private Feature getSplit(ArrayList<Instance> instances, ArrayList<Feature> remainingFeatures) {
+        Feature feature = null;
+
+        if (this.splitOn.equalsIgnoreCase("GINI") || this.splitOn.equals("1")) {
+            GiniSplit giniSplit;
+            for (Feature perFeature : remainingFeatures) {
+                sortFeature(instances, perFeature.index);
+                giniSplit = calculateGiniWithSplit(instances, perFeature);
+                if (giniSplit != null) {
+                    perFeature.giniValue = giniSplit.giniValue;
+                    perFeature.splitValue = giniSplit.splitValue;
+                }
+            }
+            sortOnSplitVariable(remainingFeatures, this.splitOn); //sort in ascending order
+            feature = remainingFeatures.get(0);
+        } else {
+            System.out.println("Info gain");
+        }
+
+        return feature;
+    }
+
+    private GiniSplit calculateGiniWithSplit(ArrayList<Instance> instances, Feature feature) {
+        int index = feature.index;
+        ArrayList<GiniSplit> miniGiniSplit = new ArrayList<>();
+
+        for (int i = 0; i <= instances.size() - 2; i++) {
+            Instance one = instances.get(i);
+            Instance two = instances.get(i + 1);
+
+            if (!one.classLabel.equals(two.classLabel)) {
+                GiniSplit giniSplit = new GiniSplit();
+                giniSplit.splitValue = (one.featureValues.get(index) + two.featureValues.get(index)) / 2;
+                giniSplit.giniValue = getGiniValue(giniSplit.splitValue, index);
+                miniGiniSplit.add(giniSplit);
+            }
+        }
+        return findMinGini(miniGiniSplit);
     }
 
     private void makeChildNodes(TreeNode node, Queue<TreeNode> queue) {
@@ -50,38 +134,15 @@ public class DecisionTree {
         ContinuousTreeNode continuousTreeNode = (ContinuousTreeNode) node;
         Feature feature = node.feature;
 
-        continuousTreeNode.leftNode = getTreeNode(this.dataset, feature, node, "left");
+        ArrayList<ArrayList<Instance>> childDatasets = splitData(node.recordsOnNode,feature);
+
+        continuousTreeNode.leftNode = getNode(childDatasets.get(0), node, feature, "left");
+        continuousTreeNode.leftNode.recordsOnNode = childDatasets.get(0);
         queue.add(continuousTreeNode.leftNode);
 
-        continuousTreeNode.rightNode = getTreeNode(this.dataset, feature, node, "right");
+        continuousTreeNode.rightNode = getNode(childDatasets.get(1), node, feature, "right");
+        continuousTreeNode.rightNode.recordsOnNode = childDatasets.get(1);
         queue.add(continuousTreeNode.rightNode);
-    }
-
-    private TreeNode getTreeNode(DataSet dataset, Feature feature, TreeNode parent, String side) {
-        ArrayList<Feature> remainingFeatures = (ArrayList<Feature>) this.dataset.getRemainingFeatures(feature);
-        double splitValue;
-        int featureIndex;
-
-        if (null == feature) {
-            splitValue = 0;
-            featureIndex = 0;
-        } else {
-            splitValue = feature.splitValue;
-            featureIndex = feature.index;
-        }
-        Feature bestFeature = getFeatureToSplitOn(remainingFeatures, splitValue, featureIndex, side);
-
-
-        HashMap<String, Integer> countMap = getClassLabelCount(dataset, feature, side);
-
-        TreeNode node = makeNode(bestFeature);
-        node.feature = bestFeature;
-        node.setCountPerClassLabel(countMap);
-        node.parentNode = parent;
-        node.label = bestFeature.getName();
-        node.isLeaf = (node.countPerClassLabel.size() == 1);
-
-        return node;
     }
 
     private TreeNode makeNode(Feature bestFeature) {
@@ -94,38 +155,13 @@ public class DecisionTree {
         }
     }
 
-    private HashMap<String, Integer> getClassLabelCount(DataSet dataset, Feature feature, String side) {
+    private HashMap<String, Integer> getClassLabelCount(ArrayList<Instance> instances, String side) {
         HashMap<String, Integer> countMap = new HashMap<>();
 
-        if (side.equalsIgnoreCase("root")) {
-            countMap = dataForRoot(dataset);
-        } else if (side.equalsIgnoreCase("left")) {
-            countMap = dataForChild(dataset, feature, side);
-        } else if (side.equalsIgnoreCase("right")) {
-            countMap = dataForChild(dataset, feature, side);
-        }
+        for (Instance instance : instances) {
+            String label = instance.classLabel;
 
-        return countMap;
-    }
-
-    private HashMap<String, Integer> dataForChild(DataSet dataset, Feature feature, String side) {
-        HashMap<String, Integer> countMap = new HashMap<>();
-
-        if (side.equalsIgnoreCase("left")) {           // <=
-            for (Instance instance : dataset.instances) {
-                List<Double> values = instance.featureValues;
-                if (values.get(feature.index) <= feature.splitValue) {
-                    insertInMap(instance.classLabel, countMap);
-                }
-            }
-
-        } else {
-            for (Instance instance : dataset.instances) {
-                List<Double> values = instance.featureValues;
-                if (values.get(feature.index) > feature.splitValue) {
-                    insertInMap(instance.classLabel, countMap);
-                }
-            }
+            insertInMap(label, countMap);
         }
 
         return countMap;
@@ -139,87 +175,6 @@ public class DecisionTree {
         } else {
             countMap.put(classLabel, 1);
         }
-    }
-
-    private HashMap<String, Integer> dataForRoot(DataSet dataset) {
-        HashMap<String, Integer> countMap = new HashMap<>();
-
-        for (Instance instance : dataset.instances) {
-            String label = instance.classLabel;
-
-            insertInMap(label, countMap);
-        }
-        return countMap;
-    }
-
-    private Feature getFeatureToSplitOn(ArrayList<Feature> features, double splitValue, int featureIndex, String side) {
-        if (this.splitOn.equalsIgnoreCase("GINI") || this.splitOn.equals("1")) {
-            features = findGiniValue(features, splitValue, featureIndex, side);
-        } else {
-            features = findInfoGain(features);
-        }
-
-        sortOnSplitVariable(features, this.splitOn); //sort in ascending order
-        return features.get(0);
-    }
-
-    private ArrayList<Feature> findInfoGain(ArrayList<Feature> features) {
-
-        return features;
-    }
-
-    private ArrayList<Feature> findGiniValue(ArrayList<Feature> features, double splitValue, int featureIndex, String side) {
-        boolean breakCondition = false;
-        for (Feature feature : features) {
-            int index = feature.index;
-
-            sortFeature(index);
-            ArrayList<GiniSplit> minGiniPerFeature = new ArrayList<>();
-            ArrayList<Instance> instances = this.dataset.instances;
-
-            if (side.equalsIgnoreCase("left")) {
-                List<Instance> instanceLeft = instances.stream()
-                        .filter(instance -> instance.featureValues.get(featureIndex) <= splitValue)
-                        .collect(Collectors.toList());
-                instances = (ArrayList<Instance>) instanceLeft;
-
-            } else if (side.equalsIgnoreCase("right")) {
-                List<Instance> instanceRight = instances.stream()
-                        .filter(instance -> instance.featureValues.get(featureIndex) > splitValue)
-                        .collect(Collectors.toList());
-                instances = (ArrayList<Instance>) instanceRight;
-            }
-
-            String label = instances.get(0).classLabel;
-            if (!instances.stream().allMatch(instance -> instance.getClassLabel().equalsIgnoreCase(label))) {
-                for (int i = 0; i <= instances.size() - 2; i++) {
-                    Instance instance1 = instances.get(i);
-                    Instance instance2 = instances.get(i + 1);
-
-                    if (!instance1.classLabel.equals(instance2.classLabel)) {
-                        GiniSplit giniSplit = new GiniSplit();
-                        giniSplit.splitValue = (instance1.featureValues.get(index) + instance2.featureValues.get(index)) / 2;
-                        giniSplit.giniValue = getGiniValue(giniSplit.splitValue, index);
-                        minGiniPerFeature.add(giniSplit);
-
-                    }
-                }
-                GiniSplit minGini = findMinGini(minGiniPerFeature);
-                feature.giniValue = minGini.giniValue;
-                feature.splitValue = minGini.splitValue;
-            } else {
-                breakCondition = true;
-                break;
-            }
-        }
-        if (breakCondition) {
-            setAllGiniValueToZero(features);
-        }
-        return features;
-    }
-
-    private void setAllGiniValueToZero(ArrayList<Feature> features) {
-        features.forEach(feature -> feature.giniValue = 0);
     }
 
     private GiniSplit findMinGini(ArrayList<GiniSplit> minGiniPerFeature) {
@@ -278,8 +233,8 @@ public class DecisionTree {
         return count;
     }
 
-    private void sortFeature(int index) {
-        Collections.sort(this.dataset.instances, (instance1, instance2) -> {
+    private void sortFeature(ArrayList<Instance> instances, int index) {
+        Collections.sort(instances, (instance1, instance2) -> {
             if (instance1.featureValues.get(index) > instance2.featureValues.get(index)) {
                 return 1;
             } else if (instance1.featureValues.get(index) < instance2.featureValues.get(index)) {

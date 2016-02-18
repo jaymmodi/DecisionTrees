@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -13,9 +14,11 @@ public class TreeNode {
     public boolean isLeaf;
     public List<Feature> remainingFeatures;
     public String label;
+    public List<Instance> recordsOnNode;
 
     public TreeNode(DataSet dataset) {
         this.dataSet = dataset;
+        this.recordsOnNode = new ArrayList<>();
     }
 
 
