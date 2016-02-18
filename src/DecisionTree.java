@@ -51,8 +51,11 @@ public class DecisionTree {
         node.feature = bestFeature;
         node.setCountPerClassLabel(countMap);
         node.parentNode = parent;
-        node.label = bestFeature.getName();
         node.isLeaf = (node.countPerClassLabel.size() == 1);
+
+        for (Map.Entry<String,Integer> stringIntegerEntry : node.countPerClassLabel.entrySet()) {
+            node.label = stringIntegerEntry.getKey();
+        }
 
         return node;
     }
