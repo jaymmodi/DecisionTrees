@@ -24,14 +24,19 @@ public class DecisionTree {
         root.recordsOnNode= this.dataset.instances;
 
         queue.add(root);
+        int depth = 0;
 
-        while (!queue.isEmpty()) {
+        while (!queue.isEmpty() && depth<=4) {
             TreeNode node = queue.poll();
-            if (!node.isLeaf()) {
+            System.out.println("depth = " + depth);
+            if(node == null){
+                depth++;
+            }
+            else if (!node.isLeaf()) {
                 makeChildNodes(node, queue);
             }
         }
-
+        System.out.println("Finish");
         return root;
     }
 
@@ -143,6 +148,8 @@ public class DecisionTree {
         continuousTreeNode.rightNode = getNode(childDatasets.get(1), node, feature, "right");
         continuousTreeNode.rightNode.recordsOnNode = childDatasets.get(1);
         queue.add(continuousTreeNode.rightNode);
+
+        queue.add(null);  // to keep the count of depth
     }
 
     private TreeNode makeNode(Feature bestFeature) {
