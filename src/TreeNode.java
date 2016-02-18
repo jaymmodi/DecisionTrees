@@ -12,9 +12,19 @@ public class TreeNode {
     public Feature feature;
     public boolean isLeaf;
     public List<Feature> remainingFeatures;
+    public String label;
 
     public TreeNode(DataSet dataset) {
         this.dataSet = dataset;
+    }
+
+
+    public String getLabel() {
+        return label;
+    }
+
+    public void setLabel(String label) {
+        this.label = label;
     }
 
     public List<Feature> getRemainingFeatures() {

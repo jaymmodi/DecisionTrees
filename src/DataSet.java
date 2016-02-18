@@ -1,5 +1,9 @@
+
+
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -12,6 +16,11 @@ public class DataSet {
     public ArrayList<String> classLabels;
     public String pathToFile;
     public ArrayList<Instance> instances;
+    public Set<Feature> usedFeatures;
+
+    public DataSet() {
+        usedFeatures = new HashSet<>();
+    }
 
     public ArrayList<Feature> getFeatures() {
         return features;
@@ -57,9 +66,10 @@ public class DataSet {
         if(feature == null){
             return this.features;
         }
-        return this.features.stream()
-                .filter(p -> (!p.getName().equals(feature.getName())))
-                .collect(Collectors.<Feature>toList());
+        usedFeatures.add(feature);
 
+        return this.features.stream()
+                .filter(p -> (!usedFeatures.contains(p)))
+                .collect(Collectors.<Feature>toList());
     }
 }
