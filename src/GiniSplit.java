@@ -5,6 +5,15 @@ public class GiniSplit {
 
     public double giniValue;
     public double splitValue;
+    public double infoGain;
+
+    public double getInfoGain() {
+        return infoGain;
+    }
+
+    public void setInfoGain(double infoGain) {
+        this.infoGain = infoGain;
+    }
 
     public double getGiniValue() {
         return giniValue;

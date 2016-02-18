@@ -83,12 +83,12 @@ public class DecisionTree {
 
     private Feature getSplit(ArrayList<Instance> instances, ArrayList<Feature> remainingFeatures) {
         Feature feature = null;
+        GiniSplit giniSplit;
 
         if (this.splitOn.equalsIgnoreCase("GINI") || this.splitOn.equals("1")) {
-            GiniSplit giniSplit;
             for (Feature perFeature : remainingFeatures) {
                 sortFeature(instances, perFeature.index);
-                giniSplit = calculateGiniWithSplit(instances, perFeature);
+                giniSplit = calcGiniInfoGain(instances, perFeature, this.splitOn);
                 if (giniSplit != null) {
                     perFeature.giniValue = giniSplit.giniValue;
                     perFeature.splitValue = giniSplit.splitValue;
@@ -98,12 +98,23 @@ public class DecisionTree {
             feature = remainingFeatures.get(0);
         } else {
             System.out.println("Info gain");
+            for (Feature perFeature : remainingFeatures) {
+                sortFeature(instances, perFeature.index);
+                giniSplit = calcGiniInfoGain(instances, perFeature,this.splitOn);
+                if (giniSplit != null) {
+                    perFeature.infoGain= giniSplit.infoGain;
+                    perFeature.splitValue = giniSplit.splitValue;
+                }
+            }
+            sortOnSplitVariable(remainingFeatures, this.splitOn); //sort in ascending order
+            feature = remainingFeatures.get(0);
         }
 
         return feature;
     }
 
-    private GiniSplit calculateGiniWithSplit(ArrayList<Instance> instances, Feature feature) {
+
+    private GiniSplit calcGiniInfoGain(ArrayList<Instance> instances, Feature feature, String splitOn) {
         int index = feature.index;
         ArrayList<GiniSplit> miniGiniSplit = new ArrayList<>();
 
@@ -114,11 +125,49 @@ public class DecisionTree {
             if (!one.classLabel.equals(two.classLabel)) {
                 GiniSplit giniSplit = new GiniSplit();
                 giniSplit.splitValue = (one.featureValues.get(index) + two.featureValues.get(index)) / 2;
-                giniSplit.giniValue = getGiniValue(giniSplit.splitValue, index);
+                if(splitOn.equalsIgnoreCase("GINI") || splitOn.equals("1")){
+                    giniSplit.giniValue = getGiniValue(giniSplit.splitValue, index);
+                }else{
+                    giniSplit.splitValue = getInfoGain(giniSplit.splitValue, index);
+                }
                 miniGiniSplit.add(giniSplit);
             }
         }
         return findMinGini(miniGiniSplit);
+    }
+
+    private double getInfoGain(double splitValue, int index) {
+        HashMap<String, Integer> countLessThanMap = new HashMap<>();
+        HashMap<String, Integer> countMoreThanMap = new HashMap<>();
+        ArrayList<Instance> instances = this.dataset.instances;
+
+        for (Instance instance : instances) {
+            double value = instance.featureValues.get(index);
+            String label = instance.classLabel;
+
+            if (value <= splitValue) {
+                insertInMap(label, countLessThanMap);
+            } else {
+                insertInMap(label, countMoreThanMap);
+            }
+        }
+
+        int lessThanCount = count(countLessThanMap);
+        int moreThanCount = count(countMoreThanMap);
+
+        double partialInfo1 = calculateInfo(countLessThanMap, lessThanCount);
+        double partialInfo2 = calculateInfo(countMoreThanMap, moreThanCount);
+
+        return ((partialInfo1 * lessThanCount) + (partialInfo2 * moreThanCount)) / (lessThanCount + moreThanCount);
+    }
+
+    private double calculateInfo(HashMap<String, Integer> map, int totalCount) {
+        double value = 0;
+        for (Map.Entry<String, Integer> entry : map.entrySet()) {
+            double temp = (entry.getValue() / (double) totalCount);
+            value += temp * Math.log(temp);
+        }
+        return value * -1;
     }
 
     private void makeChildNodes(TreeNode node, Queue<TreeNode> queue) {
