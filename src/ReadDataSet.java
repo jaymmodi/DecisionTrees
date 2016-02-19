@@ -15,7 +15,7 @@ public class ReadDataSet {
 
         DataSet dataSet = new DataSet();
         readMetaData(dataSet);
-        readData(dataSet);
+        readData(dataSet, dataSet.pathToTrainFile);
 
         System.out.println("Total records = " + dataSet.getInstances().size());
 
@@ -26,7 +26,7 @@ public class ReadDataSet {
         String splitOn = null;
         try {
             splitOn = br.readLine();
-            if(splitOn.equals("exit")){
+            if (splitOn.equals("exit")) {
                 System.exit(1);
             }
             splitOn = validateInput(splitOn);
@@ -34,26 +34,33 @@ public class ReadDataSet {
             e.printStackTrace();
         }
 
-        DecisionTree decisionTree = new DecisionTree(dataSet,splitOn);
+        DecisionTree decisionTree = new DecisionTree(dataSet, splitOn);
         TreeNode treeNode = null;
         treeNode = decisionTree.buildTree(treeNode);
+
+        DataSet testDataset = new DataSet();
+        readData(testDataset,dataSet.pathToTestFile);
+        decisionTree.classify(testDataset, treeNode);
+    }
+
+    private static DataSet createTestDataSet() {
+
     }
 
     private static String validateInput(String splitOn) {
-        if(splitOn.equalsIgnoreCase("GINI") || splitOn.equals("1")){
+        if (splitOn.equalsIgnoreCase("GINI") || splitOn.equals("1")) {
             return "GINI";
-        }else if(splitOn.equalsIgnoreCase("InfoGain") || splitOn.equals("2")){
+        } else if (splitOn.equalsIgnoreCase("InfoGain") || splitOn.equals("2")) {
             return "InfoGain";
-        }
-        else{
+        } else {
             return "exit";
         }
     }
 
-    private static DataSet readData(DataSet dataSet) {
+    private static DataSet readData(DataSet dataSet, String pathToTrainFile) {
         ArrayList<Instance> instances = new ArrayList<>();
         try {
-            BufferedReader br = new BufferedReader(new FileReader(dataSet.getPathToFile()));
+            BufferedReader br = new BufferedReader(new FileReader(dataSet.getPathToTrainFile()));
 
             String line;
             int index = 1;
@@ -68,7 +75,7 @@ public class ReadDataSet {
                     featureValues.add(Double.valueOf(perLine[i]));
                 }
 
-                row.setClassLabel(perLine[dataSet.totalFeatures]);
+                row.setTrueLabel(perLine[dataSet.totalFeatures]);
                 row.setFeatureValues(featureValues);
                 row.setIndex(index);
 
@@ -90,19 +97,20 @@ public class ReadDataSet {
             BufferedReader br = new BufferedReader(new FileReader("metadata"));
             ArrayList<Feature> features = new ArrayList<>();
 
-            dataSet.pathToFile = br.readLine();
+            dataSet.pathToTrainFile = br.readLine();
+            dataSet.pathToTestFile = br.readLine();
 
             dataSet.totalFeatures = Integer.parseInt(br.readLine());
 
             String lineSplit[] = br.readLine().split(",");
             ArrayList<String> nameList = new ArrayList<>();
-            Collections.addAll(nameList,lineSplit);
+            Collections.addAll(nameList, lineSplit);
 
             lineSplit = br.readLine().split(",");
             ArrayList<String> featureType = new ArrayList<>();
-            Collections.addAll(featureType,lineSplit);
+            Collections.addAll(featureType, lineSplit);
 
-            for (int i = 0; i <nameList.size(); i++) {
+            for (int i = 0; i < nameList.size(); i++) {
                 Feature feature;
 
                 feature = featureType.get(i).equalsIgnoreCase("continuous") ? new ContinuousFeature() : new CategoricalFeature();

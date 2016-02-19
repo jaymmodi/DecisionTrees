@@ -10,10 +10,19 @@ public class DataSet {
     public int totalFeatures;
     public ArrayList<Feature> features;
     public ArrayList<String> classLabels;
-    public String pathToFile;
+    public String pathToTrainFile;
+    public String pathToTestFile;
     public ArrayList<Instance> instances;
 
     public DataSet() {
+    }
+
+    public String getPathToTestFile() {
+        return pathToTestFile;
+    }
+
+    public void setPathToTestFile(String pathToTestFile) {
+        this.pathToTestFile = pathToTestFile;
     }
 
     public ArrayList<Feature> getFeatures() {
@@ -24,12 +33,12 @@ public class DataSet {
         this.features = features;
     }
 
-    public String getPathToFile() {
-        return pathToFile;
+    public String getPathToTrainFile() {
+        return pathToTrainFile;
     }
 
-    public void setPathToFile(String pathToFile) {
-        this.pathToFile = pathToFile;
+    public void setPathToTrainFile(String pathToTrainFile) {
+        this.pathToTrainFile = pathToTrainFile;
     }
 
     public int getTotalFeatures() {

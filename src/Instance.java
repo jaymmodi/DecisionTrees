@@ -7,14 +7,23 @@ public class Instance {
 
     int index;
     List<Double> featureValues;
-    String classLabel;
+    String trueLabel;
+    String classifiedLabel;
 
-    public String getClassLabel() {
-        return classLabel;
+    public String getClassifiedLabel() {
+        return classifiedLabel;
     }
 
-    public void setClassLabel(String classLabel) {
-        this.classLabel = classLabel;
+    public void setClassifiedLabel(String classifiedLabel) {
+        this.classifiedLabel = classifiedLabel;
+    }
+
+    public String getTrueLabel() {
+        return trueLabel;
+    }
+
+    public void setTrueLabel(String trueLabel) {
+        this.trueLabel = trueLabel;
     }
 
     public int getIndex() {

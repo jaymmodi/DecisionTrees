@@ -21,18 +21,17 @@ public class DecisionTree {
         Queue<TreeNode> queue = new LinkedList<>();
 
         root = getNode(this.dataset.instances, null, null, "root");
-        root.recordsOnNode= this.dataset.instances;
+        root.recordsOnNode = this.dataset.instances;
 
         queue.add(root);
         int depth = 0;
 
-        while (!queue.isEmpty() && depth<=4) {
+        while (!queue.isEmpty() && depth <= 4) {
             TreeNode node = queue.poll();
             System.out.println("depth = " + depth);
-            if(node == null){
+            if (node == null) {
                 depth++;
-            }
-            else if (!node.isLeaf()) {
+            } else if (!node.isLeaf()) {
                 makeChildNodes(node, queue);
             }
         }
@@ -53,7 +52,7 @@ public class DecisionTree {
         node.parentNode = parent;
         node.isLeaf = (node.countPerClassLabel.size() == 1);
 
-        for (Map.Entry<String,Integer> stringIntegerEntry : node.countPerClassLabel.entrySet()) {
+        for (Map.Entry<String, Integer> stringIntegerEntry : node.countPerClassLabel.entrySet()) {
             node.label = stringIntegerEntry.getKey();
         }
 
@@ -103,9 +102,9 @@ public class DecisionTree {
             System.out.println("Info gain");
             for (Feature perFeature : remainingFeatures) {
                 sortFeature(instances, perFeature.index);
-                giniSplit = calcGiniInfoGain(instances, perFeature,this.splitOn);
+                giniSplit = calcGiniInfoGain(instances, perFeature, this.splitOn);
                 if (giniSplit != null) {
-                    perFeature.infoGain= giniSplit.infoGain;
+                    perFeature.infoGain = giniSplit.infoGain;
                     perFeature.splitValue = giniSplit.splitValue;
                 }
             }
@@ -125,12 +124,12 @@ public class DecisionTree {
             Instance one = instances.get(i);
             Instance two = instances.get(i + 1);
 
-            if (!one.classLabel.equals(two.classLabel)) {
+            if (!one.trueLabel.equals(two.trueLabel)) {
                 GiniSplit giniSplit = new GiniSplit();
                 giniSplit.splitValue = (one.featureValues.get(index) + two.featureValues.get(index)) / 2;
-                if(splitOn.equalsIgnoreCase("GINI") || splitOn.equals("1")){
+                if (splitOn.equalsIgnoreCase("GINI") || splitOn.equals("1")) {
                     giniSplit.giniValue = getGiniValue(giniSplit.splitValue, index);
-                }else{
+                } else {
                     giniSplit.splitValue = getInfoGain(giniSplit.splitValue, index);
                 }
                 miniGiniSplit.add(giniSplit);
@@ -158,7 +157,7 @@ public class DecisionTree {
     private void makeChildrenMap(double splitValue, int index, HashMap<String, Integer> countLessThanMap, HashMap<String, Integer> countMoreThanMap, ArrayList<Instance> instances) {
         for (Instance instance : instances) {
             double value = instance.featureValues.get(index);
-            String label = instance.classLabel;
+            String label = instance.trueLabel;
 
             if (value <= splitValue) {
                 insertInMap(label, countLessThanMap);
@@ -195,7 +194,7 @@ public class DecisionTree {
         ContinuousTreeNode continuousTreeNode = (ContinuousTreeNode) node;
         Feature feature = node.feature;
 
-        ArrayList<ArrayList<Instance>> childDatasets = splitData(node.recordsOnNode,feature);
+        ArrayList<ArrayList<Instance>> childDatasets = splitData(node.recordsOnNode, feature);
 
         continuousTreeNode.leftNode = getNode(childDatasets.get(0), node, feature, "left");
         continuousTreeNode.leftNode.recordsOnNode = childDatasets.get(0);
@@ -222,7 +221,7 @@ public class DecisionTree {
         HashMap<String, Integer> countMap = new HashMap<>();
 
         for (Instance instance : instances) {
-            String label = instance.classLabel;
+            String label = instance.trueLabel;
 
             insertInMap(label, countMap);
         }
@@ -326,6 +325,33 @@ public class DecisionTree {
     private void print(ArrayList<Feature> features) {
         for (Feature feature : features) {
             System.out.println(feature.giniValue);
+        }
+    }
+
+
+    public void classify(DataSet testDataset, TreeNode treeNode) {
+        testDataset.instances.forEach(instance -> traverseTree(instance, treeNode));
+    }
+
+    private void traverseTree(Instance instance, TreeNode treeNode) {
+        if (treeNode.isLeaf()) {
+            instance.classifiedLabel = treeNode.label;
+        } else {
+            Feature feature = treeNode.feature;
+            int index = feature.index;
+            double splitValue = feature.splitValue;
+
+            Double value = instance.featureValues.get(index);
+
+            if (feature.getType().equalsIgnoreCase("Continuous")) {
+                ContinuousTreeNode continuousTreeNode = (ContinuousTreeNode) treeNode;
+                if (value <= splitValue) {
+                    traverseTree(instance, continuousTreeNode.leftNode);
+                } else {
+                    traverseTree(instance, continuousTreeNode.rightNode);
+                }
+            }
+
         }
     }
 
