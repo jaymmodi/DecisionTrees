@@ -42,11 +42,7 @@ public class ReadDataSet {
         readData(testDataset,dataSet.pathToTestFile);
         decisionTree.classify(testDataset, treeNode);
     }
-
-    private static DataSet createTestDataSet() {
-
-    }
-
+    
     private static String validateInput(String splitOn) {
         if (splitOn.equalsIgnoreCase("GINI") || splitOn.equals("1")) {
             return "GINI";
