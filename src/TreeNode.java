@@ -39,7 +39,7 @@ public class TreeNode {
     }
 
     public boolean isLeaf() {
-        return (this.countPerClassLabel.size() == 1);
+        return this.isLeaf;
     }
 
     public Feature getFeature() {

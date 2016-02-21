@@ -1,5 +1,4 @@
-/media/jay/DDrive/Jay/IUB/Spring 2016/Data Sets/train/Iris/sortedData.csv
-/media/jay/DDrive/Jay/IUB/Spring 2016/Data Sets/test/Iris/test.txt
+/media/jay/DDrive/Jay/IUB/Spring 2016/Data Sets/train/Iris/sample.csv
 4
 sepal_length,sepal_width,petal_length,petal_width
 continuous,continuous,continuous,continuous

@@ -14,6 +14,8 @@ public class ReadDataSet {
     public static void main(String[] args) {
 
         DataSet dataSet = new DataSet();
+        DataSet testDataset = new DataSet();
+
         readMetaData(dataSet);
 
         readData(dataSet, dataSet.pathToTrainFile);
@@ -35,18 +37,39 @@ public class ReadDataSet {
             e.printStackTrace();
         }
 
-        DecisionTree decisionTree = new DecisionTree(dataSet, splitOn);
-        TreeNode treeNode = null;
-        treeNode = decisionTree.buildTree(treeNode);
+//        DecisionTree decisionTree = new DecisionTree(dataSet, splitOn);
+//        TreeNode treeNode = null;
+//        treeNode = decisionTree.buildTree(treeNode);
+//
+//        DataSet testDataset = new DataSet();
+//        testDataset.features = dataSet.features;
+//        testDataset.totalFeatures = dataSet.totalFeatures;
+//
+//        testDataset = readData(testDataset,dataSet.pathToTestFile);
+//        decisionTree.classify(testDataset, treeNode);
+//
+//        calculateAccuracy(testDataset);
 
-        DataSet testDataset = new DataSet();
-        testDataset.features = dataSet.features;
-        testDataset.totalFeatures = dataSet.totalFeatures;
+        int folds = 10;
+        CrossValidation crossValidation = new CrossValidation(dataSet, testDataset, folds);
 
-        testDataset = readData(testDataset,dataSet.pathToTestFile);
-        decisionTree.classify(testDataset, treeNode);
+        for (int i = 1; i <=folds; i++) {
+            System.out.println("--------------------- fold ------  " + i);
+            crossValidation.getDataSetForCurrentFold(i);
+            dataSet = crossValidation.getDataSet();
+            testDataset = crossValidation.getTestDataset();
 
-        calculateAccuracy(testDataset);
+            TreeNode treeNode;
+            DecisionTree decisionTree = new DecisionTree(dataSet, splitOn);
+            treeNode = decisionTree.buildTree(null);
+
+            testDataset.features = dataSet.features;
+            testDataset.totalFeatures = dataSet.totalFeatures;
+
+            decisionTree.classify(testDataset, treeNode);
+
+            calculateAccuracy(testDataset);
+        }
     }
 
     private static void calculateAccuracy(DataSet testDataset) {
@@ -54,7 +77,7 @@ public class ReadDataSet {
                 .filter(instance -> instance.trueLabel.equalsIgnoreCase(instance.classifiedLabel))
                 .count();
 
-        System.out.println(count*100/(double)testDataset.instances.size());
+        System.out.println(count * 100 / (double) testDataset.instances.size());
 
     }
 
@@ -80,10 +103,9 @@ public class ReadDataSet {
                 Instance row = new Instance();
                 List<Double> featureValues = new ArrayList<>();
 
-                String perLine[] = line.split(",");
+                String perLine[] = line.split("\t");
 
                 for (int i = 0; i < dataSet.totalFeatures; i++) {
-                    System.out.println(perLine[i]);
                     featureValues.add(Double.valueOf(perLine[i]));
                 }
 
@@ -110,7 +132,6 @@ public class ReadDataSet {
             ArrayList<Feature> features = new ArrayList<>();
 
             dataSet.pathToTrainFile = br.readLine();
-            dataSet.pathToTestFile = br.readLine();
 
             dataSet.totalFeatures = Integer.parseInt(br.readLine());
 

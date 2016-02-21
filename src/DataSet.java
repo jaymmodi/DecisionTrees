@@ -10,18 +10,9 @@ public class DataSet {
     public ArrayList<Feature> features;
     public ArrayList<String> classLabels;
     public String pathToTrainFile;
-    public String pathToTestFile;
     public ArrayList<Instance> instances;
 
     public DataSet() {
-    }
-
-    public String getPathToTestFile() {
-        return pathToTestFile;
-    }
-
-    public void setPathToTestFile(String pathToTestFile) {
-        this.pathToTestFile = pathToTestFile;
     }
 
     public ArrayList<Feature> getFeatures() {

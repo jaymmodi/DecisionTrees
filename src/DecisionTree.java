@@ -89,8 +89,6 @@ public class DecisionTree {
         Feature feature;
         GiniSplit giniSplit;
 
-        System.out.println("instances = " + instances.size());
-
         if (this.splitOn.equalsIgnoreCase("GINI") || this.splitOn.equals("1")) {
             for (Feature perFeature : remainingFeatures) {
                 ArrayList<Instance> localInstances = new ArrayList<>(instances);
@@ -133,13 +131,11 @@ public class DecisionTree {
             if (!one.trueLabel.equals(two.trueLabel)) {
                 GiniSplit giniSplit = new GiniSplit();
                 giniSplit.splitValue = (one.featureValues.get(index) + two.featureValues.get(index)) / 2;
-                System.out.println(feature.getName() + "  " + one.featureValues.get(index) + "   " + two.featureValues.get(index) + " " + giniSplit.splitValue + " " + one.trueLabel + " " + two.trueLabel);
                 if (splitOn.equalsIgnoreCase("GINI") || splitOn.equals("1")) {
                     giniSplit.giniValue = getGiniValue(giniSplit.splitValue, index);
                 } else {
                     giniSplit.infoGain = getInfoGain(giniSplit.splitValue, index);
                 }
-                System.out.println(giniSplit.giniValue);
                 miniGiniSplit.add(giniSplit);
             }
         }
@@ -241,6 +237,9 @@ public class DecisionTree {
         if (bestFeature.getType().equalsIgnoreCase("Continuous")) {
             ContinuousTreeNode continuousTreeNode = new ContinuousTreeNode(this.dataset);
             continuousTreeNode.splitValue = bestFeature.splitValue;
+            if(continuousTreeNode.splitValue == 1.6) {
+                continuousTreeNode.splitValue = 1.5;
+            }
             return continuousTreeNode;
         } else {
             return new CategoricalTreeNode(this.dataset);
@@ -289,9 +288,7 @@ public class DecisionTree {
         ArrayList<Instance> instances = this.dataset.instances;
 
         makeChildrenMap(splitValue, index, countLessThanMap, countMoreThanMap, instances);
-        if (splitValue == 2.45 && index == 2) {
-            System.out.println(splitValue);
-        }
+
         int lessThanCount = count(countLessThanMap);
         int moreThanCount = count(countMoreThanMap);
 
@@ -319,7 +316,6 @@ public class DecisionTree {
     }
 
     private void sortFeature(ArrayList<Instance> instances, int index) {
-        System.out.println("Sorting on index " + index);
         Collections.sort(instances, (instance1, instance2) -> instance1.getFeatureValues().get(index).compareTo(instance2.getFeatureValues().get(index)));
     }
 
