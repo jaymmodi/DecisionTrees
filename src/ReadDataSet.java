@@ -38,11 +38,11 @@ public class ReadDataSet {
         TreeNode treeNode = null;
         treeNode = decisionTree.buildTree(treeNode);
 
-        DataSet testDataset = new DataSet();
-        readData(testDataset,dataSet.pathToTestFile);
-        decisionTree.classify(testDataset, treeNode);
+//        DataSet testDataset = new DataSet();
+//        testDataset = readData(testDataset,dataSet.pathToTestFile);
+//        decisionTree.classify(testDataset, treeNode);
     }
-    
+
     private static String validateInput(String splitOn) {
         if (splitOn.equalsIgnoreCase("GINI") || splitOn.equals("1")) {
             return "GINI";
@@ -53,10 +53,10 @@ public class ReadDataSet {
         }
     }
 
-    private static DataSet readData(DataSet dataSet, String pathToTrainFile) {
+    private static DataSet readData(DataSet dataSet, String path) {
         ArrayList<Instance> instances = new ArrayList<>();
         try {
-            BufferedReader br = new BufferedReader(new FileReader(dataSet.getPathToTrainFile()));
+            BufferedReader br = new BufferedReader(new FileReader(path));
 
             String line;
             int index = 1;

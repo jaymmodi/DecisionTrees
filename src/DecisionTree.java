@@ -8,6 +8,7 @@ public class DecisionTree {
 
 
     public DataSet dataset;
+    ;
     public String splitOn;
 
 
@@ -20,18 +21,16 @@ public class DecisionTree {
     public TreeNode buildTree(TreeNode root) {
         Queue<TreeNode> queue = new LinkedList<>();
 
-        root = getNode(this.dataset.instances, null, null, "root");
+        ArrayList<Instance> instances = this.dataset.getInstances();
+        root = getNode(instances, null, null, "root");
         root.recordsOnNode = this.dataset.instances;
 
         queue.add(root);
-        int depth = 0;
 
-        while (!queue.isEmpty() && depth <= 4) {
+        while (!queue.isEmpty()) {
             TreeNode node = queue.poll();
-            System.out.println("depth = " + depth);
-            if (node == null) {
-                depth++;
-            } else if (!node.isLeaf()) {
+
+            if (!node.isLeaf() && node.recordsOnNode.size() > 0) {
                 makeChildNodes(node, queue);
             }
         }
@@ -40,21 +39,25 @@ public class DecisionTree {
     }
 
     private TreeNode getNode(ArrayList<Instance> instances, TreeNode parent, Feature feature, String side) {
-        ArrayList<Feature> remainingFeatures = (ArrayList<Feature>) this.dataset.getRemainingFeatures(feature);
+        TreeNode node;
+        ArrayList<Feature> remainingFeatures = this.dataset.getRemainingFeatures(feature);
 
-        Feature bestFeature = getSplit(instances, remainingFeatures);
+        HashMap<String, Integer> countMap = getClassLabelCount(instances);
+        if (countMap.size() == 1) {  // leaf node
+            node = new TreeNode(this.dataset);
+            node.isLeaf = true;
+            node.setCountPerClassLabel(countMap);
+            for (Map.Entry<String, Integer> stringIntegerEntry : node.countPerClassLabel.entrySet()) {
+                node.label = stringIntegerEntry.getKey();
+            }
+        } else {
+            Feature bestFeature = getSplit(instances, remainingFeatures);
 
-        HashMap<String, Integer> countMap = getClassLabelCount(instances, side);
-
-        TreeNode node = makeNode(bestFeature);
-        node.feature = bestFeature;
-        node.setCountPerClassLabel(countMap);
-        node.parentNode = parent;
-        node.isLeaf = (node.countPerClassLabel.size() == 1);
-
-        for (Map.Entry<String, Integer> stringIntegerEntry : node.countPerClassLabel.entrySet()) {
-            node.label = stringIntegerEntry.getKey();
+            node = makeNode(bestFeature);
+            node.setCountPerClassLabel(countMap);
+            node.feature = bestFeature;
         }
+        node.parentNode = parent;
 
         return node;
     }
@@ -84,13 +87,16 @@ public class DecisionTree {
     }
 
     private Feature getSplit(ArrayList<Instance> instances, ArrayList<Feature> remainingFeatures) {
-        Feature feature = null;
+        Feature feature;
         GiniSplit giniSplit;
+
+        System.out.println("instances = " + instances.size());
 
         if (this.splitOn.equalsIgnoreCase("GINI") || this.splitOn.equals("1")) {
             for (Feature perFeature : remainingFeatures) {
-                sortFeature(instances, perFeature.index);
-                giniSplit = calcGiniInfoGain(instances, perFeature, this.splitOn);
+                ArrayList<Instance> localInstances = new ArrayList<>(instances);
+                sortFeature(localInstances, perFeature.index);
+                giniSplit = calcGiniInfoGain(localInstances, perFeature, this.splitOn);
                 if (giniSplit != null) {
                     perFeature.giniValue = giniSplit.giniValue;
                     perFeature.splitValue = giniSplit.splitValue;
@@ -101,8 +107,9 @@ public class DecisionTree {
         } else {
             System.out.println("Info gain");
             for (Feature perFeature : remainingFeatures) {
-                sortFeature(instances, perFeature.index);
-                giniSplit = calcGiniInfoGain(instances, perFeature, this.splitOn);
+                ArrayList<Instance> localInstances = new ArrayList<>(instances);
+                sortFeature(localInstances, perFeature.index);
+                giniSplit = calcGiniInfoGain(localInstances, perFeature, this.splitOn);
                 if (giniSplit != null) {
                     perFeature.infoGain = giniSplit.infoGain;
                     perFeature.splitValue = giniSplit.splitValue;
@@ -127,11 +134,13 @@ public class DecisionTree {
             if (!one.trueLabel.equals(two.trueLabel)) {
                 GiniSplit giniSplit = new GiniSplit();
                 giniSplit.splitValue = (one.featureValues.get(index) + two.featureValues.get(index)) / 2;
+                System.out.println(feature.getName() + "  " + one.featureValues.get(index) + "   " + two.featureValues.get(index) + " " + giniSplit.splitValue + " " + one.trueLabel + " " + two.trueLabel);
                 if (splitOn.equalsIgnoreCase("GINI") || splitOn.equals("1")) {
                     giniSplit.giniValue = getGiniValue(giniSplit.splitValue, index);
                 } else {
-                    giniSplit.splitValue = getInfoGain(giniSplit.splitValue, index);
+                    giniSplit.infoGain = getInfoGain(giniSplit.splitValue, index);
                 }
+                System.out.println(giniSplit.giniValue);
                 miniGiniSplit.add(giniSplit);
             }
         }
@@ -196,15 +205,37 @@ public class DecisionTree {
 
         ArrayList<ArrayList<Instance>> childDatasets = splitData(node.recordsOnNode, feature);
 
-        continuousTreeNode.leftNode = getNode(childDatasets.get(0), node, feature, "left");
-        continuousTreeNode.leftNode.recordsOnNode = childDatasets.get(0);
-        queue.add(continuousTreeNode.leftNode);
+        if (childDatasets.get(0).size() != 0 && childDatasets.get(1).size() != 0) {
+            continuousTreeNode.leftNode = getNode(childDatasets.get(0), node, feature, "left");
+            continuousTreeNode.leftNode.recordsOnNode = childDatasets.get(0);
+            queue.add(continuousTreeNode.leftNode);
 
-        continuousTreeNode.rightNode = getNode(childDatasets.get(1), node, feature, "right");
-        continuousTreeNode.rightNode.recordsOnNode = childDatasets.get(1);
-        queue.add(continuousTreeNode.rightNode);
+            continuousTreeNode.rightNode = getNode(childDatasets.get(1), node, feature, "right");
+            continuousTreeNode.rightNode.recordsOnNode = childDatasets.get(1);
+            queue.add(continuousTreeNode.rightNode);
+        } else {
+            makeCurrentNodeAsLeaf(node);
+        }
 
-        queue.add(null);  // to keep the count of depth
+    }
+
+    private void makeCurrentNodeAsLeaf(TreeNode node) {
+        node.isLeaf = true;
+        HashMap<String, Integer> countPerClassLabel = node.countPerClassLabel;
+
+        int max = Integer.MIN_VALUE;
+        String label = "";
+
+        for (Map.Entry<String, Integer> stringIntegerEntry : countPerClassLabel.entrySet()) {
+            int value = stringIntegerEntry.getValue();
+
+            if (value > max) {
+                max = value;
+                label = stringIntegerEntry.getKey();
+            }
+        }
+
+        node.label = label;
     }
 
     private TreeNode makeNode(Feature bestFeature) {
@@ -217,7 +248,7 @@ public class DecisionTree {
         }
     }
 
-    private HashMap<String, Integer> getClassLabelCount(ArrayList<Instance> instances, String side) {
+    private HashMap<String, Integer> getClassLabelCount(ArrayList<Instance> instances) {
         HashMap<String, Integer> countMap = new HashMap<>();
 
         for (Instance instance : instances) {
@@ -244,7 +275,7 @@ public class DecisionTree {
         double min = Double.MAX_VALUE;
 
         for (GiniSplit giniSplit : minGiniPerFeature) {
-            if (giniSplit.giniValue <= min) {
+            if (giniSplit.giniValue < min) {
                 minGiniFeature = giniSplit;
                 min = giniSplit.giniValue;
             }
@@ -259,7 +290,9 @@ public class DecisionTree {
         ArrayList<Instance> instances = this.dataset.instances;
 
         makeChildrenMap(splitValue, index, countLessThanMap, countMoreThanMap, instances);
-
+        if (splitValue == 2.45 && index == 2) {
+            System.out.println(splitValue);
+        }
         int lessThanCount = count(countLessThanMap);
         int moreThanCount = count(countMoreThanMap);
 
@@ -287,38 +320,15 @@ public class DecisionTree {
     }
 
     private void sortFeature(ArrayList<Instance> instances, int index) {
-        Collections.sort(instances, (instance1, instance2) -> {
-            if (instance1.featureValues.get(index) > instance2.featureValues.get(index)) {
-                return 1;
-            } else if (instance1.featureValues.get(index) < instance2.featureValues.get(index)) {
-                return -1;
-            } else {
-                return 0;
-            }
-        });
+        System.out.println("Sorting on index " + index);
+        Collections.sort(instances, (instance1, instance2) -> instance1.getFeatureValues().get(index).compareTo(instance2.getFeatureValues().get(index)));
     }
 
     private void sortOnSplitVariable(ArrayList<Feature> features, String splitOn) {
         if (splitOn.equalsIgnoreCase("GINI")) {
-            Collections.sort(features, (feature1, feature2) -> {
-                if (feature1.giniValue > feature2.giniValue) {
-                    return 1;
-                } else if (feature1.giniValue < feature2.giniValue) {
-                    return -1;
-                } else {
-                    return 0;
-                }
-            });
+            Collections.sort(features, (feature1, feature2) -> Double.valueOf(feature1.giniValue).compareTo(feature2.giniValue));
         } else if (splitOn.equalsIgnoreCase("InfoGain")) {
-            Collections.sort(features, (feature1, feature2) -> {
-                if (feature1.infoGain > feature2.infoGain) {
-                    return 1;
-                } else if (feature1.infoGain < feature2.infoGain) {
-                    return -1;
-                } else {
-                    return 0;
-                }
-            });
+            Collections.sort(features, (feature1, feature2) -> Double.valueOf(feature1.infoGain).compareTo(feature2.infoGain));
         }
     }
 

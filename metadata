@@ -1,6 +1,6 @@
 /media/jay/DDrive/Jay/IUB/Spring 2016/Data Sets/train/Iris/data.txt
-/media/jay/DDrive/Jay/IUB/Spring 2016/Data Sets/test/Iris/data.txt
+/media/jay/DDrive/Jay/IUB/Spring 2016/Data Sets/test/Iris/test.txt
 4
 sepal_length,sepal_width,petal_length,petal_width
 continuous,continuous,continuous,continuous
-Setosa,Versicolour,Virginica
+Iris-Setosa,Iris-Versicolour,Iris-Virginica

@@ -1,5 +1,4 @@
 import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -65,13 +64,14 @@ public class DataSet {
         this.instances = instances;
     }
 
-    public List<Feature> getRemainingFeatures(Feature feature){
-        if(feature == null){
-            return this.features;
+    public ArrayList<Feature> getRemainingFeatures(Feature feature) {
+        if (feature == null) {
+            return this.features.stream()
+                    .collect(Collectors.toCollection(ArrayList::new));
         }
 
         return this.features.stream()
                 .filter(p -> (!p.getName().equals(feature.getName())))
-                .collect(Collectors.<Feature>toList());
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 }
