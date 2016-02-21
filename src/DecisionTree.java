@@ -6,14 +6,14 @@ import java.util.stream.Collectors;
  */
 public class DecisionTree {
 
-
     public DataSet dataset;
     public String splitOn;
+    public String treeType;
 
-
-    public DecisionTree(DataSet dataSet, String splitOn) {
+    public DecisionTree(DataSet dataSet, String splitOn, String treeType) {
         this.dataset = dataSet;
         this.splitOn = splitOn;
+        this.treeType = treeType;
     }
 
 
@@ -102,7 +102,6 @@ public class DecisionTree {
             sortOnSplitVariable(remainingFeatures, this.splitOn); //sort in ascending order
             feature = remainingFeatures.get(0);
         } else {
-            System.out.println("Info gain");
             for (Feature perFeature : remainingFeatures) {
                 ArrayList<Instance> localInstances = new ArrayList<>(instances);
                 sortFeature(localInstances, perFeature.index);
@@ -237,7 +236,7 @@ public class DecisionTree {
         if (bestFeature.getType().equalsIgnoreCase("Continuous")) {
             ContinuousTreeNode continuousTreeNode = new ContinuousTreeNode(this.dataset);
             continuousTreeNode.splitValue = bestFeature.splitValue;
-            if(continuousTreeNode.splitValue == 1.6) {
+            if (continuousTreeNode.splitValue == 1.6) {
                 continuousTreeNode.splitValue = 1.5;
             }
             return continuousTreeNode;
@@ -337,7 +336,7 @@ public class DecisionTree {
     public void classify(DataSet testDataset, TreeNode treeNode) {
         testDataset.instances.forEach(instance -> {
             traverseTree(instance, treeNode);
-            System.out.println(instance.getTrueLabel()+ "   " + instance.getClassifiedLabel());
+            System.out.println(instance.getTrueLabel() + "   " + instance.getClassifiedLabel());
         });
     }
 
@@ -348,7 +347,7 @@ public class DecisionTree {
             Feature feature = treeNode.feature;
             int index = feature.index;
             double splitValue = 0;
-            if(feature.getType().equalsIgnoreCase("Continuous")) {
+            if (feature.getType().equalsIgnoreCase("Continuous")) {
                 ContinuousTreeNode continuousTreeNode = (ContinuousTreeNode) treeNode;
                 splitValue = continuousTreeNode.getSplitValue();
             }

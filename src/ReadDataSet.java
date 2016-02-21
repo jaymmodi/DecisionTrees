@@ -37,19 +37,6 @@ public class ReadDataSet {
             e.printStackTrace();
         }
 
-//        DecisionTree decisionTree = new DecisionTree(dataSet, splitOn);
-//        TreeNode treeNode = null;
-//        treeNode = decisionTree.buildTree(treeNode);
-//
-//        DataSet testDataset = new DataSet();
-//        testDataset.features = dataSet.features;
-//        testDataset.totalFeatures = dataSet.totalFeatures;
-//
-//        testDataset = readData(testDataset,dataSet.pathToTestFile);
-//        decisionTree.classify(testDataset, treeNode);
-//
-//        calculateAccuracy(testDataset);
-
         int folds = 10;
         CrossValidation crossValidation = new CrossValidation(dataSet, testDataset, folds);
 
