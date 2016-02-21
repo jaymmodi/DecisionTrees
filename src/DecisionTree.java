@@ -8,7 +8,6 @@ public class DecisionTree {
 
 
     public DataSet dataset;
-    ;
     public String splitOn;
 
 
@@ -340,7 +339,10 @@ public class DecisionTree {
 
 
     public void classify(DataSet testDataset, TreeNode treeNode) {
-        testDataset.instances.forEach(instance -> traverseTree(instance, treeNode));
+        testDataset.instances.forEach(instance -> {
+            traverseTree(instance, treeNode);
+            System.out.println(instance.getTrueLabel()+ "   " + instance.getClassifiedLabel());
+        });
     }
 
     private void traverseTree(Instance instance, TreeNode treeNode) {
@@ -349,7 +351,11 @@ public class DecisionTree {
         } else {
             Feature feature = treeNode.feature;
             int index = feature.index;
-            double splitValue = feature.splitValue;
+            double splitValue = 0;
+            if(feature.getType().equalsIgnoreCase("Continuous")) {
+                ContinuousTreeNode continuousTreeNode = (ContinuousTreeNode) treeNode;
+                splitValue = continuousTreeNode.getSplitValue();
+            }
 
             Double value = instance.featureValues.get(index);
 

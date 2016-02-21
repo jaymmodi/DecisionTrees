@@ -15,6 +15,7 @@ public class ReadDataSet {
 
         DataSet dataSet = new DataSet();
         readMetaData(dataSet);
+
         readData(dataSet, dataSet.pathToTrainFile);
 
         System.out.println("Total records = " + dataSet.getInstances().size());
@@ -38,9 +39,23 @@ public class ReadDataSet {
         TreeNode treeNode = null;
         treeNode = decisionTree.buildTree(treeNode);
 
-//        DataSet testDataset = new DataSet();
-//        testDataset = readData(testDataset,dataSet.pathToTestFile);
-//        decisionTree.classify(testDataset, treeNode);
+        DataSet testDataset = new DataSet();
+        testDataset.features = dataSet.features;
+        testDataset.totalFeatures = dataSet.totalFeatures;
+
+        testDataset = readData(testDataset,dataSet.pathToTestFile);
+        decisionTree.classify(testDataset, treeNode);
+
+        calculateAccuracy(testDataset);
+    }
+
+    private static void calculateAccuracy(DataSet testDataset) {
+        int count = (int) testDataset.instances.stream()
+                .filter(instance -> instance.trueLabel.equalsIgnoreCase(instance.classifiedLabel))
+                .count();
+
+        System.out.println(count*100/(double)testDataset.instances.size());
+
     }
 
     private static String validateInput(String splitOn) {
@@ -68,6 +83,7 @@ public class ReadDataSet {
                 String perLine[] = line.split(",");
 
                 for (int i = 0; i < dataSet.totalFeatures; i++) {
+                    System.out.println(perLine[i]);
                     featureValues.add(Double.valueOf(perLine[i]));
                 }
 
