@@ -20,12 +20,48 @@ public class ReadDataSet {
 
         readData(dataSet, dataSet.pathToTrainFile);
 
-        System.out.println("Total records = " + dataSet.getInstances().size());
-
         System.out.println("Please provide the criteria to split on ");
         System.out.println(" 1. GINI 2. InfoGain");
 
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        String splitOn = getSplitOnVariable(br);
+
+        System.out.println("Please select a type of tree ");
+        System.out.println(" 1. Complete 2. Prune 3. Parallel");
+
+        String treeType = getTreeType(br);
+        try {
+            br.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        runCrossValidation(dataSet, testDataset, splitOn, treeType);
+    }
+
+    private static String getTreeType(BufferedReader br) {
+        String treeType = null;
+        try {
+            treeType = br.readLine();
+            treeType = validateTreeType(treeType);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return treeType;
+    }
+
+    private static String validateTreeType(String treeType) {
+        if (treeType.equalsIgnoreCase("Complete") || treeType.equals("1")) {
+            return "Complete";
+        } else if (treeType.equalsIgnoreCase("Prune") || treeType.equals("2")) {
+            return "prune";
+        } else {
+            return "parallel";
+        }
+    }
+
+    private static String getSplitOnVariable(BufferedReader br) {
         String splitOn = null;
         try {
             splitOn = br.readLine();
@@ -36,7 +72,10 @@ public class ReadDataSet {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return splitOn;
+    }
 
+    private static void runCrossValidation(DataSet dataSet, DataSet testDataset, String splitOn, String treeType) {
         int folds = 10;
         CrossValidation crossValidation = new CrossValidation(dataSet, testDataset, folds);
 
@@ -47,8 +86,8 @@ public class ReadDataSet {
             testDataset = crossValidation.getTestDataset();
 
             TreeNode treeNode;
-            DecisionTree decisionTree = new DecisionTree(dataSet, splitOn);
-            treeNode = decisionTree.buildTree(null);
+            DecisionTree decisionTree = new DecisionTree(dataSet, splitOn,treeType);
+            treeNode = decisionTree.buildTree();
 
             testDataset.features = dataSet.features;
             testDataset.totalFeatures = dataSet.totalFeatures;

@@ -16,20 +16,27 @@ public class DecisionTree {
         this.treeType = treeType;
     }
 
+    public TreeNode buildTree() {
+        if (this.treeType.equalsIgnoreCase("complete") || this.treeType.equalsIgnoreCase("1")) {
+            return getCompleteTree();
+        } else if (this.treeType.equalsIgnoreCase("prune") || this.treeType.equalsIgnoreCase("2")) {
+            return getPrunedTree();
+        } else {
+            return getParallelTree();
+        }
+    }
 
-    public TreeNode buildTree(TreeNode root) {
+    public TreeNode getCompleteTree() {
         Queue<TreeNode> queue = new LinkedList<>();
 
-        ArrayList<Instance> instances = this.dataset.getInstances();
-        root = getNode(instances, null, null, "root");
-        root.recordsOnNode = this.dataset.instances;
+        TreeNode root = getRootNode();
 
         queue.add(root);
 
         while (!queue.isEmpty()) {
             TreeNode node = queue.poll();
 
-            if (!node.isLeaf() && node.recordsOnNode.size() > 0) {
+            if (!node.isLeaf()) {
                 makeChildNodes(node, queue);
             }
         }
@@ -37,7 +44,101 @@ public class DecisionTree {
         return root;
     }
 
-    private TreeNode getNode(ArrayList<Instance> instances, TreeNode parent, Feature feature, String side) {
+    private TreeNode getRootNode() {
+        TreeNode root;
+        ArrayList<Instance> instances = this.dataset.getInstances();
+        root = getNode(instances, null, null);
+        root.recordsOnNode = this.dataset.instances;
+        return root;
+    }
+
+    public TreeNode getPrunedTree() {
+        int split = 0;
+
+        Queue<TreeNode> queue = new LinkedList<>();
+        HashMap<String, Integer> classLabelCount = getClassLabelCount(this.dataset.instances);
+
+        int misclassifiedCount = countMisclassified(classLabelCount);
+        double initialScore = getPessimisticScore(misclassifiedCount, 1, this.dataset.instances.size());
+
+        TreeNode root = getRootNode();
+
+        queue.add(root);
+        double afterScore = initialScore;
+
+        while (!queue.isEmpty() && afterScore <= initialScore) {
+            initialScore = afterScore;
+
+            TreeNode node = queue.poll();
+
+            if (!node.isLeaf()) {
+                makeChildNodes(node, queue);
+                split++;
+                if (!node.isLeaf()) {
+                    misclassifiedCount = getMisclassifiedCountAfterSplit(node);
+                    afterScore = getPessimisticScore(misclassifiedCount, split + 1, this.dataset.instances.size());
+                }
+            }
+
+        }
+        System.out.println("Finish");
+        return root;
+    }
+
+    private int getMisclassifiedCountAfterSplit(TreeNode node) {
+        int count = 0;
+
+        if (node.getFeature().getType().equalsIgnoreCase("Continuous")) {
+            ContinuousTreeNode continuousTreeNode = (ContinuousTreeNode) node;
+            if (!continuousTreeNode.leftNode.isLeaf()) {
+                count += countMisclassified(continuousTreeNode.leftNode.countPerClassLabel);
+            }
+
+            if (!continuousTreeNode.rightNode.isLeaf()) {
+                count += countMisclassified(continuousTreeNode.rightNode.countPerClassLabel);
+            }
+        }
+        return count;
+    }
+
+    private int countMisclassified(HashMap<String, Integer> countLabel) {
+        int count = 0;
+        int max = Integer.MIN_VALUE;
+        String key = "";
+
+        Set<Map.Entry<String, Integer>> entries = countLabel.entrySet();
+
+        for (Map.Entry<String, Integer> entry : entries) {
+            int value = entry.getValue();
+            if (value > max) {
+                max = value;
+                key = entry.getKey();
+            }
+        }
+
+        List<Integer> collect = new ArrayList<>();
+        for (Map.Entry<String, Integer> stringIntegerEntry : countLabel.entrySet()) {
+            if (!stringIntegerEntry.getKey().equalsIgnoreCase(key)) {
+                collect.add(stringIntegerEntry.getValue());
+            }
+        }
+
+        for (Integer integer : collect) {
+            count = count + integer;
+        }
+        return count;
+    }
+
+    private double getPessimisticScore(int misclassifiedCount, int leafCount, int size) {
+        return (misclassifiedCount + leafCount * 0.5) / (double) (size);
+    }
+
+    public TreeNode getParallelTree() {
+        return null;
+    }
+
+
+    private TreeNode getNode(ArrayList<Instance> instances, TreeNode parent, Feature feature) {
         TreeNode node;
         ArrayList<Feature> remainingFeatures = this.dataset.getRemainingFeatures(feature);
 
@@ -200,11 +301,11 @@ public class DecisionTree {
         ArrayList<ArrayList<Instance>> childDatasets = splitData(node.recordsOnNode, feature);
 
         if (childDatasets.get(0).size() != 0 && childDatasets.get(1).size() != 0) {
-            continuousTreeNode.leftNode = getNode(childDatasets.get(0), node, feature, "left");
+            continuousTreeNode.leftNode = getNode(childDatasets.get(0), node, feature);
             continuousTreeNode.leftNode.recordsOnNode = childDatasets.get(0);
             queue.add(continuousTreeNode.leftNode);
 
-            continuousTreeNode.rightNode = getNode(childDatasets.get(1), node, feature, "right");
+            continuousTreeNode.rightNode = getNode(childDatasets.get(1), node, feature);
             continuousTreeNode.rightNode.recordsOnNode = childDatasets.get(1);
             queue.add(continuousTreeNode.rightNode);
         } else {
@@ -236,9 +337,6 @@ public class DecisionTree {
         if (bestFeature.getType().equalsIgnoreCase("Continuous")) {
             ContinuousTreeNode continuousTreeNode = new ContinuousTreeNode(this.dataset);
             continuousTreeNode.splitValue = bestFeature.splitValue;
-            if (continuousTreeNode.splitValue == 1.6) {
-                continuousTreeNode.splitValue = 1.5;
-            }
             return continuousTreeNode;
         } else {
             return new CategoricalTreeNode(this.dataset);
@@ -341,6 +439,9 @@ public class DecisionTree {
     }
 
     private void traverseTree(Instance instance, TreeNode treeNode) {
+        if(treeNode == null){
+            System.out.println();
+        }
         if (treeNode.isLeaf()) {
             instance.classifiedLabel = treeNode.label;
         } else {
