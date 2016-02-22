@@ -1,3 +1,6 @@
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -6,14 +9,16 @@ import java.util.stream.Collectors;
  */
 public class DecisionTree {
 
+    public String evalType;
     public DataSet dataset;
     public String splitOn;
     public String treeType;
 
-    public DecisionTree(DataSet dataSet, String splitOn, String treeType) {
+    public DecisionTree(DataSet dataSet, String splitOn, String treeType, String evalType) {
         this.dataset = dataSet;
         this.splitOn = splitOn;
         this.treeType = treeType;
+        this.evalType = evalType;
     }
 
     public TreeNode buildTree() {
@@ -53,20 +58,23 @@ public class DecisionTree {
     }
 
     public TreeNode getPrunedTree() {
+
         int split = 0;
 
         Queue<TreeNode> queue = new LinkedList<>();
         HashMap<String, Integer> classLabelCount = getClassLabelCount(this.dataset.instances);
 
+
+        int leafCount = 1;
         int misclassifiedCount = countMisclassified(classLabelCount);
-        double initialScore = getPessimisticScore(misclassifiedCount, 1, this.dataset.instances.size());
+        double initialScore = getScore(evalType, leafCount, misclassifiedCount, split);
 
         TreeNode root = getRootNode();
 
         queue.add(root);
         double afterScore = initialScore;
 
-        while (!queue.isEmpty() && afterScore <= initialScore) {
+        while (!queue.isEmpty()) {
             initialScore = afterScore;
 
             TreeNode node = queue.poll();
@@ -76,13 +84,44 @@ public class DecisionTree {
                 split++;
                 if (!node.isLeaf()) {
                     misclassifiedCount = getMisclassifiedCountAfterSplit(node);
-                    afterScore = getPessimisticScore(misclassifiedCount, split + 1, this.dataset.instances.size());
+                    afterScore = getScore(evalType, split + 1, misclassifiedCount, split);
                 }
             }
-
+            if (afterScore > initialScore) {
+                makeCurrentNodeAsLeaf(node);
+                removeLast(queue);
+                removeLast(queue);
+            }
         }
         System.out.println("Finish");
         return root;
+    }
+
+    private void removeLast(Queue<TreeNode> queue) {
+        TreeNode first = queue.peek();
+        TreeNode current;
+
+        while (true) {
+            current = queue.poll();
+            if (first == queue.peek()) {
+                break;
+            }
+            queue.add(current);
+        }
+
+    }
+
+    private double getScore(String evalType, int leafCount, int misclassifiedCount, int nodeCount) {
+        if (evalType.equalsIgnoreCase("Pessimistic Error") || evalType.equalsIgnoreCase("1")) {
+            return getPessimisticScore(misclassifiedCount, leafCount, this.dataset.instances.size());
+        } else {
+            return getMDLPScore(misclassifiedCount, leafCount, nodeCount);
+        }
+
+    }
+
+    private double getMDLPScore(int misclassifiedCount, int leafCount, int nodeCount) {
+        return misclassifiedCount * Math.log(this.dataset.instances.size()) + leafCount * Math.log(this.dataset.classLabels.size()) + nodeCount * Math.log(this.dataset.totalFeatures);
     }
 
     private int getMisclassifiedCountAfterSplit(TreeNode node) {
@@ -439,7 +478,7 @@ public class DecisionTree {
     }
 
     private void traverseTree(Instance instance, TreeNode treeNode) {
-        if(treeNode == null){
+        if (treeNode == null) {
             System.out.println();
         }
         if (treeNode.isLeaf()) {

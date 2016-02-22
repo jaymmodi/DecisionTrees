@@ -30,13 +30,20 @@ public class ReadDataSet {
         System.out.println(" 1. Complete 2. Prune 3. Parallel");
 
         String treeType = getTreeType(br);
-        try {
-            br.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+
+        String evalType = null;
+        if(treeType.equalsIgnoreCase("Prune") || treeType.equalsIgnoreCase("2")){
+            System.out.println("Select the method to evaluate the overfitting prevention ");
+            System.out.println("1. Pessimistic Error 2. Validation Set  3. MDLP");
+
+            try {
+                evalType = br.readLine();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
-        runCrossValidation(dataSet, testDataset, splitOn, treeType);
+        runCrossValidation(dataSet, testDataset, splitOn, treeType,evalType);
     }
 
     private static String getTreeType(BufferedReader br) {
@@ -75,7 +82,7 @@ public class ReadDataSet {
         return splitOn;
     }
 
-    private static void runCrossValidation(DataSet dataSet, DataSet testDataset, String splitOn, String treeType) {
+    private static void runCrossValidation(DataSet dataSet, DataSet testDataset, String splitOn, String treeType,String evalType) {
         int folds = 10;
         CrossValidation crossValidation = new CrossValidation(dataSet, testDataset, folds);
 
@@ -86,7 +93,7 @@ public class ReadDataSet {
             testDataset = crossValidation.getTestDataset();
 
             TreeNode treeNode;
-            DecisionTree decisionTree = new DecisionTree(dataSet, splitOn,treeType);
+            DecisionTree decisionTree = new DecisionTree(dataSet, splitOn,treeType,evalType);
             treeNode = decisionTree.buildTree();
 
             testDataset.features = dataSet.features;
