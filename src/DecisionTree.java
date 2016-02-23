@@ -1,6 +1,3 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -10,15 +7,17 @@ import java.util.stream.Collectors;
 public class DecisionTree {
 
     public String evalType;
+    public int topTrees;
     public DataSet dataset;
     public String splitOn;
     public String treeType;
 
-    public DecisionTree(DataSet dataSet, String splitOn, String treeType, String evalType) {
+    public DecisionTree(DataSet dataSet, String splitOn, String treeType, String evalType, int topTrees) {
         this.dataset = dataSet;
         this.splitOn = splitOn;
         this.treeType = treeType;
         this.evalType = evalType;
+        this.topTrees = topTrees;
     }
 
     public TreeNode buildTree() {
@@ -63,7 +62,6 @@ public class DecisionTree {
 
         Queue<TreeNode> queue = new LinkedList<>();
         HashMap<String, Integer> classLabelCount = getClassLabelCount(this.dataset.instances);
-
 
         int leafCount = 1;
         int misclassifiedCount = countMisclassified(classLabelCount);
@@ -124,16 +122,16 @@ public class DecisionTree {
         return misclassifiedCount * Math.log(this.dataset.instances.size()) + leafCount * Math.log(this.dataset.classLabels.size()) + nodeCount * Math.log(this.dataset.totalFeatures);
     }
 
-    private int getMisclassifiedCountAfterSplit(TreeNode node) {
+    public int getMisclassifiedCountAfterSplit(TreeNode node) {
         int count = 0;
 
         if (node.getFeature().getType().equalsIgnoreCase("Continuous")) {
             ContinuousTreeNode continuousTreeNode = (ContinuousTreeNode) node;
-            if (!continuousTreeNode.leftNode.isLeaf()) {
+            if (null != continuousTreeNode.leftNode &&!continuousTreeNode.leftNode.isLeaf()) {
                 count += countMisclassified(continuousTreeNode.leftNode.countPerClassLabel);
             }
 
-            if (!continuousTreeNode.rightNode.isLeaf()) {
+            if (null != continuousTreeNode.rightNode && !continuousTreeNode.rightNode.isLeaf()) {
                 count += countMisclassified(continuousTreeNode.rightNode.countPerClassLabel);
             }
         }
@@ -168,12 +166,14 @@ public class DecisionTree {
         return count;
     }
 
-    private double getPessimisticScore(int misclassifiedCount, int leafCount, int size) {
+    public double getPessimisticScore(int misclassifiedCount, int leafCount, int size) {
         return (misclassifiedCount + leafCount * 0.5) / (double) (size);
     }
 
     public TreeNode getParallelTree() {
-        return null;
+
+        ParallelTree parallelTree = new ParallelTree(this);
+        return parallelTree.getNode();
     }
 
 
@@ -190,7 +190,9 @@ public class DecisionTree {
                 node.label = stringIntegerEntry.getKey();
             }
         } else {
-            Feature bestFeature = getSplit(instances, remainingFeatures);
+            List<Feature> bestFeatures = getTopFeatures(instances, remainingFeatures);
+
+            Feature bestFeature = bestFeatures.get(0);
 
             node = makeNode(bestFeature);
             node.setCountPerClassLabel(countMap);
@@ -201,7 +203,7 @@ public class DecisionTree {
         return node;
     }
 
-    private ArrayList<ArrayList<Instance>> splitData(List<Instance> recordsOnNode, Feature bestFeature) {
+    public ArrayList<ArrayList<Instance>> splitData(List<Instance> recordsOnNode, Feature bestFeature) {
 
         ArrayList<ArrayList<Instance>> childDatasets = new ArrayList<>();
         double spliValue = bestFeature.splitValue;
@@ -225,8 +227,8 @@ public class DecisionTree {
         return childDatasets;
     }
 
-    private Feature getSplit(ArrayList<Instance> instances, ArrayList<Feature> remainingFeatures) {
-        Feature feature;
+    public List<Feature> getTopFeatures(ArrayList<Instance> instances, ArrayList<Feature> remainingFeatures) {
+//        Feature feature;
         GiniSplit giniSplit;
 
         if (this.splitOn.equalsIgnoreCase("GINI") || this.splitOn.equals("1")) {
@@ -240,7 +242,7 @@ public class DecisionTree {
                 }
             }
             sortOnSplitVariable(remainingFeatures, this.splitOn); //sort in ascending order
-            feature = remainingFeatures.get(0);
+//            feature = remainingFeatures.get(0);
         } else {
             for (Feature perFeature : remainingFeatures) {
                 ArrayList<Instance> localInstances = new ArrayList<>(instances);
@@ -252,10 +254,10 @@ public class DecisionTree {
                 }
             }
             sortOnSplitVariable(remainingFeatures, this.splitOn); //sort in ascending order
-            feature = remainingFeatures.get(0);
+//            feature = remainingFeatures.get(0);
         }
 
-        return feature;
+        return remainingFeatures;
     }
 
 
@@ -382,7 +384,7 @@ public class DecisionTree {
         }
     }
 
-    private HashMap<String, Integer> getClassLabelCount(ArrayList<Instance> instances) {
+    public HashMap<String, Integer> getClassLabelCount(ArrayList<Instance> instances) {
         HashMap<String, Integer> countMap = new HashMap<>();
 
         for (Instance instance : instances) {
@@ -478,9 +480,6 @@ public class DecisionTree {
     }
 
     private void traverseTree(Instance instance, TreeNode treeNode) {
-        if (treeNode == null) {
-            System.out.println();
-        }
         if (treeNode.isLeaf()) {
             instance.classifiedLabel = treeNode.label;
         } else {
@@ -505,6 +504,5 @@ public class DecisionTree {
 
         }
     }
-
 
 }

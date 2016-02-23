@@ -43,7 +43,18 @@ public class ReadDataSet {
             }
         }
 
-        runCrossValidation(dataSet, testDataset, splitOn, treeType,evalType);
+        int topTrees=0;
+        if(treeType.equalsIgnoreCase("Parallel") || treeType.equalsIgnoreCase("3")){
+            System.out.println("Please enter a number to select top trees but less than " + dataSet.totalFeatures);
+
+            try {
+                topTrees = Integer.parseInt(br.readLine());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        runCrossValidation(dataSet, testDataset, splitOn, treeType,evalType,topTrees);
     }
 
     private static String getTreeType(BufferedReader br) {
@@ -82,7 +93,7 @@ public class ReadDataSet {
         return splitOn;
     }
 
-    private static void runCrossValidation(DataSet dataSet, DataSet testDataset, String splitOn, String treeType,String evalType) {
+    private static void runCrossValidation(DataSet dataSet, DataSet testDataset, String splitOn, String treeType, String evalType, int topTrees) {
         int folds = 10;
         CrossValidation crossValidation = new CrossValidation(dataSet, testDataset, folds);
 
@@ -93,7 +104,7 @@ public class ReadDataSet {
             testDataset = crossValidation.getTestDataset();
 
             TreeNode treeNode;
-            DecisionTree decisionTree = new DecisionTree(dataSet, splitOn,treeType,evalType);
+            DecisionTree decisionTree = new DecisionTree(dataSet, splitOn,treeType,evalType,topTrees);
             treeNode = decisionTree.buildTree();
 
             testDataset.features = dataSet.features;
