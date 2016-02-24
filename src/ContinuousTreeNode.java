@@ -13,6 +13,18 @@ public class ContinuousTreeNode extends TreeNode {
         this.rightNode = null;
     }
 
+    public ContinuousTreeNode(ContinuousTreeNode c,DataSet dataSet,TreeNode parent){
+        super(dataSet);
+        this.splitValue = c.splitValue;
+        this.leftNode = null;
+        this.rightNode = null;
+        this.recordsOnNode = c.recordsOnNode;
+        this.parentNode = parent;
+        this.label = c.label;
+        this.feature = c.feature;
+        this.remainingFeatures = c.remainingFeatures;
+    }
+
     public double getSplitValue() {
         return splitValue;
     }

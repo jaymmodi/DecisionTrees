@@ -1,7 +1,4 @@
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -22,19 +19,25 @@ public class ParallelTree {
         List<Tree> bestMTrees = selectBest(mTrees, this.decisionTree.topTrees);
 
         boolean allQueueEmpty = checkLoopCondition(bestMTrees);
-        int leftOrRight = 1;
 
         while (!allQueueEmpty) {
+            mTrees.clear();
             for (Tree bestTree : bestMTrees) {
+
                 Queue<TreeNode> queue = bestTree.getQueue();
 
-                TreeNode node = queue.poll();
+                if (!queue.isEmpty()) {
+                    TreeNode node = queue.poll();
 
-                if (!node.isLeaf) {
-                    List<Tree> childMTrees = splitChild(bestTree, node, queue, leftOrRight);
-                    mTrees.addAll(childMTrees);
-                } else {
-                    mTrees.add(bestTree);
+                    if (!node.isLeaf) {
+                        List<Tree> childMTrees = makeChildNodes(bestTree, node, queue);
+                        if (childMTrees.size() == 0) {
+                            mTrees.add(bestTree);
+                        }
+                        mTrees.addAll(childMTrees);
+                    } else {
+                        mTrees.add(bestTree);
+                    }
                 }
             }
             bestMTrees = selectBest(mTrees, this.decisionTree.topTrees);
@@ -45,49 +48,134 @@ public class ParallelTree {
         return trees.get(0).treeNode;
     }
 
-    private List<Tree> splitChild(Tree bestTree, TreeNode node, Queue<TreeNode> queue, int leftOrRight) {
+    private List<Tree> makeChildNodes(Tree bestTree, TreeNode node, Queue<TreeNode> queue) {
         //           update queue
         List<Tree> mTrees = new ArrayList<>();
         ContinuousTreeNode continuousTreeNode = (ContinuousTreeNode) node;
         Feature feature = continuousTreeNode.feature;
         ArrayList<ArrayList<Instance>> splitData = this.decisionTree.splitData(continuousTreeNode.recordsOnNode, feature);
 
+        if (isDataSetZeroSize(splitData)) {
+            // make this node as leaf
+            Tree tempTree = makeTree(bestTree, continuousTreeNode, null, "any");
+            return Collections.singletonList(tempTree);
+        }
         List<Feature> topMFeatures;
-        if (leftOrRight % 2 != 0) {
-            topMFeatures = getTopMFeatures(splitData.get(0), feature);
-        } else {
-            topMFeatures = getTopMFeatures(splitData.get(1), feature);
-        }
-
-        for (Feature topMFeature : topMFeatures) {
-            TreeNode childNode;
-
-            if (leftOrRight % 2 != 0) {
-                childNode = getTreeNode(splitData.get(0), topMFeature, continuousTreeNode);
-                continuousTreeNode.leftNode = childNode;
-            } else {
-                childNode = getTreeNode(splitData.get(1), topMFeature, continuousTreeNode);
-                continuousTreeNode.rightNode = childNode;
+        if (continuousTreeNode.leftNode == null) {
+            HashMap<String, Integer> classLabelCount = this.decisionTree.getClassLabelCount(splitData.get(0));
+            if (classLabelCount.size() == 1) {
+                continuousTreeNode.leftNode = getTreeNode(splitData.get(0), feature, continuousTreeNode);
+                Tree tempTreeRight = makeTree(bestTree, continuousTreeNode, continuousTreeNode.leftNode, "left");
+                return Collections.singletonList(tempTreeRight);
             }
-
-            Tree tree = makeTree(bestTree, childNode);
-            mTrees.add(tree);
+            topMFeatures = getTopMFeatures(splitData.get(0), feature);
+            makeMChildNodesForNode(bestTree, mTrees, continuousTreeNode, splitData, topMFeatures, "left");
+        } else {
+            HashMap<String, Integer> classLabelCount = this.decisionTree.getClassLabelCount(splitData.get(1));
+            if (classLabelCount.size() == 1) {
+                continuousTreeNode.rightNode = getTreeNode(splitData.get(1), feature, bestTree.treeNode);
+                Tree tempTreeRight = makeTree(bestTree, continuousTreeNode, continuousTreeNode.rightNode, "right");
+                return Collections.singletonList(tempTreeRight);
+            }
+            topMFeatures = getTopMFeatures(splitData.get(1), feature);
+            makeMChildNodesForNode(bestTree, mTrees, continuousTreeNode, splitData, topMFeatures, "right");
         }
+
         return mTrees;
     }
 
-    private Tree makeTree(Tree bestTree, TreeNode childNode) {
-        Tree tree = new Tree();
+    private void makeMChildNodesForNode(Tree bestTree, List<Tree> mTrees, ContinuousTreeNode continuousTreeNode, ArrayList<ArrayList<Instance>> splitData, List<Feature> topMFeatures, String side) {
+        for (Feature topMFeature : topMFeatures) {
+            TreeNode childNode;
+            Tree tree;
 
-        tree.treeNode = bestTree.treeNode;
-        if (tree.queue == null) {
-            tree.queue = new LinkedList<>();
+            if (side.equalsIgnoreCase("left")) {
+                childNode = getTreeNode(splitData.get(0), topMFeature, continuousTreeNode);
+                continuousTreeNode.leftNode = childNode;
+                tree = makeTree(bestTree, continuousTreeNode, childNode, side);
+            } else {
+                childNode = getTreeNode(splitData.get(1), topMFeature, continuousTreeNode);
+                continuousTreeNode.rightNode = childNode;
+                tree = makeTree(bestTree, continuousTreeNode, childNode, side);
+            }
+
+            mTrees.add(tree);
         }
-        tree.queue.add(childNode);
-        tree.splitCount = bestTree.splitCount + 1;
-        tree.leafNodes = bestTree.leafNodes + 1;
+    }
 
+    private boolean isDataSetZeroSize(ArrayList<ArrayList<Instance>> splitData) {
+        for (ArrayList<Instance> instances : splitData) {
+            if (instances.size() == 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Tree makeTree(Tree bestTree, ContinuousTreeNode findThisNode, TreeNode childNode, String leftOrRight) {
+
+//        tree.treeNode = new ContinuousTreeNode((ContinuousTreeNode) bestTree.treeNode, this.decisionTree.dataset);
+        Tree tree = copyTree(bestTree);
+
+        if (tree.queue == null) {
+            tree.queue = new LinkedList<>(bestTree.queue);
+        }
+
+        TreeNode parent = findNode(tree, findThisNode);
+        if (childNode == null) {
+            this.decisionTree.makeCurrentNodeAsLeaf(parent);
+            tree.splitCount = bestTree.splitCount - 1;
+            tree.leafNodes = bestTree.leafNodes - 1;
+        } else {
+            ContinuousTreeNode continuousTreeNode = (ContinuousTreeNode) childNode;
+
+            if (leftOrRight.equalsIgnoreCase("left")) {
+                if (parent != null) {
+                    ((ContinuousTreeNode) parent).leftNode = childNode;
+                }
+            } else {
+                if (parent != null) {
+                    ((ContinuousTreeNode) parent).rightNode = childNode;
+                }
+            }
+
+            if (((ContinuousTreeNode) continuousTreeNode.parentNode).rightNode == null) {
+                TreeNode parentInNew = findNode(tree, (ContinuousTreeNode) continuousTreeNode.parentNode);
+                tree.queue.add(parentInNew);
+            }
+            tree.queue.add(childNode);
+            if (!childNode.isLeaf) {
+                tree.splitCount = bestTree.splitCount + 1;
+                tree.leafNodes = bestTree.leafNodes + 1;
+            } else {
+                tree.splitCount = bestTree.splitCount;
+                tree.leafNodes = bestTree.leafNodes;
+            }
+        }
         return tree;
+    }
+
+    private TreeNode findNode(Tree tree, ContinuousTreeNode findThisNode) {
+        Queue<TreeNode> queue = new LinkedList<>();
+
+        queue.add(tree.treeNode);
+
+        while (!queue.isEmpty()) {
+            TreeNode node = queue.poll();
+
+            if (null != node) {
+                ContinuousTreeNode continuousTreeNode = (ContinuousTreeNode) node;
+
+                if (continuousTreeNode.splitValue == findThisNode.splitValue && continuousTreeNode.recordsOnNode.size() == findThisNode.recordsOnNode.size()) {
+                    return node;
+                } else {
+                    queue.add(continuousTreeNode.leftNode);
+                    queue.add(continuousTreeNode.rightNode);
+                }
+            }
+        }
+
+        return null;
     }
 
     private boolean checkLoopCondition(List<Tree> bestMTrees) {
@@ -101,14 +189,14 @@ public class ParallelTree {
 
 
     private List<Tree> selectBest(List<Tree> trees, int topNumber) {
-        if (trees.size() == this.decisionTree.topTrees) {
-            return trees;
+        if (trees.size() == topNumber) {
+            return new ArrayList<>(trees);
         }
         ArrayList<Tree> bestMTrees = new ArrayList<>();
 
         for (Tree tree : trees) {
-            TreeNode treeNode = tree.treeNode;
-            int misclassifiedCount = this.decisionTree.getMisclassifiedCountAfterSplit(treeNode);
+//            TreeNode treeNode = tree.treeNode;
+            int misclassifiedCount = traverseTree(tree);
             tree.score = this.decisionTree.getPessimisticScore(misclassifiedCount, tree.leafNodes, this.decisionTree.dataset.instances.size());
             bestMTrees.add(tree);
         }
@@ -117,6 +205,38 @@ public class ParallelTree {
                 .skip(0)
                 .limit(topNumber)
                 .collect(Collectors.toList());
+    }
+
+    private int traverseTree(Tree tree) {
+        Queue<TreeNode> queue = new LinkedList<>();
+
+        queue.add(tree.treeNode);
+        int count = 0;
+
+        while (!queue.isEmpty()) {
+            TreeNode treeNode = queue.poll();
+            ContinuousTreeNode continuousTreeNode = (ContinuousTreeNode) treeNode;
+            if (!continuousTreeNode.isLeaf) {
+                if (continuousTreeNode.leftNode == null) {
+                    //count
+                    ArrayList<ArrayList<Instance>> lists = this.decisionTree.splitData(continuousTreeNode.recordsOnNode, continuousTreeNode.feature);
+                    HashMap<String, Integer> classLabelCount = this.decisionTree.getClassLabelCount(lists.get(0));
+                    count += this.decisionTree.countMisclassified(classLabelCount);
+
+                } else {
+                    queue.add(continuousTreeNode.leftNode);
+                }
+
+                if (continuousTreeNode.rightNode == null) {
+                    ArrayList<ArrayList<Instance>> lists = this.decisionTree.splitData(continuousTreeNode.recordsOnNode, continuousTreeNode.feature);
+                    HashMap<String, Integer> classLabelCount = this.decisionTree.getClassLabelCount(lists.get(1));
+                    count += this.decisionTree.countMisclassified(classLabelCount);
+                } else {
+                    queue.add(continuousTreeNode.rightNode);
+                }
+            }
+        }
+        return count;
     }
 
     private List<Feature> getTopMFeatures(ArrayList<Instance> instances, Feature feature) {
@@ -133,7 +253,6 @@ public class ParallelTree {
         for (Feature topMFeature : topMFeatures) {
             Tree tree = new Tree();
             tree.treeNode = getTreeNode(instances, topMFeature, parent);
-            tree.splitCount++;
             tree.leafNodes = tree.splitCount + 1;
             if (tree.queue == null) {
                 tree.queue = new LinkedList<>();
@@ -155,8 +274,34 @@ public class ParallelTree {
 
         if (node.countPerClassLabel.size() == 1) {
             node.isLeaf = true;
+            for (Map.Entry<String, Integer> stringIntegerEntry : node.countPerClassLabel.entrySet()) {
+                node.label = stringIntegerEntry.getKey();
+            }
         }
 
         return node;
+    }
+
+    public Tree copyTree(Tree bestTree) {
+        if (bestTree == null) {
+            return null;
+        }
+        TreeNode root = copyAndMakeTree(bestTree.treeNode, null);
+        Tree tree = new Tree();
+        tree.treeNode = root;
+        return tree;
+    }
+
+    private TreeNode copyAndMakeTree(TreeNode root, TreeNode parent) {
+        if (root == null) {
+            return null;
+        }
+        ContinuousTreeNode continuousRoot = (ContinuousTreeNode) root;
+        ContinuousTreeNode continuousNewRoot = new ContinuousTreeNode(continuousRoot, this.decisionTree.dataset, parent);
+
+        continuousNewRoot.leftNode = copyAndMakeTree(continuousRoot.leftNode, continuousNewRoot);
+        continuousNewRoot.rightNode = copyAndMakeTree(continuousRoot.rightNode, continuousNewRoot);
+
+        return continuousNewRoot;
     }
 }

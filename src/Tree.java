@@ -13,6 +13,7 @@ public class Tree {
 
     public Tree() {
         this.splitCount = 1;
+        this.leafNodes = this.splitCount + 1;
     }
 
     public int getSplitCount() {

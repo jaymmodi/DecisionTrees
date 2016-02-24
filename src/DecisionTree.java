@@ -138,7 +138,7 @@ public class DecisionTree {
         return count;
     }
 
-    private int countMisclassified(HashMap<String, Integer> countLabel) {
+    public int countMisclassified(HashMap<String, Integer> countLabel) {
         int count = 0;
         int max = Integer.MIN_VALUE;
         String key = "";
@@ -355,9 +355,9 @@ public class DecisionTree {
 
     }
 
-    private void makeCurrentNodeAsLeaf(TreeNode node) {
+    public void makeCurrentNodeAsLeaf(TreeNode node) {
         node.isLeaf = true;
-        HashMap<String, Integer> countPerClassLabel = node.countPerClassLabel;
+        HashMap<String, Integer> countPerClassLabel = getClassLabelCount((ArrayList<Instance>) node.recordsOnNode);
 
         int max = Integer.MIN_VALUE;
         String label = "";
