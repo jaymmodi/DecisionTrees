@@ -8,16 +8,18 @@ public class DecisionTree {
 
     public String evalType;
     public int topTrees;
+    public List<Instance> validationDataset;
     public DataSet dataset;
     public String splitOn;
     public String treeType;
 
-    public DecisionTree(DataSet dataSet, String splitOn, String treeType, String evalType, int topTrees) {
+    public DecisionTree(DataSet dataSet, String splitOn, String treeType, String evalType, int topTrees, List<Instance> validationDataset) {
         this.dataset = dataSet;
         this.splitOn = splitOn;
         this.treeType = treeType;
         this.evalType = evalType;
         this.topTrees = topTrees;
+        this.validationDataset = validationDataset;
     }
 
     public TreeNode buildTree() {
@@ -65,7 +67,8 @@ public class DecisionTree {
 
         int leafCount = 1;
         int misclassifiedCount = countMisclassified(classLabelCount);
-        double initialScore = getScore(evalType, leafCount, misclassifiedCount, split);
+        double initialScore = getScore(evalType, leafCount, misclassifiedCount, split, null);
+        System.out.println("initialScore = " + initialScore);
 
         TreeNode root = getRootNode();
 
@@ -82,7 +85,8 @@ public class DecisionTree {
                 split++;
                 if (!node.isLeaf()) {
                     misclassifiedCount = getMisclassifiedCountAfterSplit(node);
-                    afterScore = getScore(evalType, split + 1, misclassifiedCount, split);
+                    afterScore = getScore(evalType, split + 1, misclassifiedCount, split, root);
+                    System.out.println("afterScore = " + afterScore);
                 }
             }
             if (afterScore > initialScore) {
@@ -109,13 +113,90 @@ public class DecisionTree {
 
     }
 
-    private double getScore(String evalType, int leafCount, int misclassifiedCount, int nodeCount) {
+    private double getScore(String evalType, int leafCount, int misclassifiedCount, int nodeCount, TreeNode root) {
         if (evalType.equalsIgnoreCase("Pessimistic Error") || evalType.equalsIgnoreCase("1")) {
             return getPessimisticScore(misclassifiedCount, leafCount, this.dataset.instances.size());
+        } else if (evalType.equalsIgnoreCase("Validation Set") || evalType.equalsIgnoreCase("2")) {
+            return getErrorOnValidationSet(root);
         } else {
             return getMDLPScore(misclassifiedCount, leafCount, nodeCount);
         }
 
+    }
+
+    private double getErrorOnValidationSet(TreeNode root) {
+        List<Instance> validationInstances = this.validationDataset;
+
+        if (root == null) {
+            HashMap<String, Integer> classLabelCount = getClassLabelCount(this.dataset.instances);
+
+            String label = getLabel(classLabelCount);
+
+            int count = (int) validationInstances
+                    .stream()
+                    .filter(instance -> !instance.trueLabel.equalsIgnoreCase(label))
+                    .count();
+
+            return count * 100 / validationInstances.size();
+        }
+        for (Instance validationInstance : validationInstances) {
+            traverseForValidation(validationInstance, root, null);
+        }
+
+        int count = (int) validationInstances.stream()
+                .filter(validationInstance -> !validationInstance.trueLabel.equalsIgnoreCase(validationInstance.classifiedLabel))
+                .count();
+
+        return count * 100 / (double) validationInstances.size();
+    }
+
+    private void traverseForValidation(Instance validationInstance, TreeNode root, ContinuousTreeNode parent) {
+        if (root == null) {
+//            TreeNode parent = root.parentNode;
+            HashMap<String, Integer> classLabelCount = this.getClassLabelCount((ArrayList<Instance>) parent.recordsOnNode);
+            String label = getLabel(classLabelCount);
+            validationInstance.classifiedLabel = label;
+        } else {
+            if (root.isLeaf()) {
+                validationInstance.classifiedLabel = root.label;
+            } else {
+                Feature feature = root.feature;
+                int index = feature.index;
+                double splitValue = 0;
+                if (feature.getType().equalsIgnoreCase("Continuous")) {
+                    ContinuousTreeNode continuousTreeNode = (ContinuousTreeNode) root;
+                    splitValue = continuousTreeNode.getSplitValue();
+                }
+
+                Double value = validationInstance.featureValues.get(index);
+
+                if (feature.getType().equalsIgnoreCase("Continuous")) {
+                    ContinuousTreeNode continuousTreeNode = (ContinuousTreeNode) root;
+//                    ContinuousTreeNode parent = continuousTreeNode;
+                    if (value <= splitValue) {
+                        traverseForValidation(validationInstance, continuousTreeNode.leftNode,continuousTreeNode);
+                    } else {
+                        traverseForValidation(validationInstance, continuousTreeNode.rightNode,continuousTreeNode);
+                    }
+                }
+
+            }
+        }
+    }
+
+    private String getLabel(HashMap<String, Integer> classLabelCount) {
+        int max = Integer.MIN_VALUE;
+        String label = null;
+        for (Map.Entry<String, Integer> stringIntegerEntry : classLabelCount.entrySet()) {
+            int value = stringIntegerEntry.getValue();
+
+            if (value > max) {
+                max = value;
+                label = stringIntegerEntry.getKey();
+            }
+
+        }
+        return label;
     }
 
     private double getMDLPScore(int misclassifiedCount, int leafCount, int nodeCount) {
@@ -127,7 +208,7 @@ public class DecisionTree {
 
         if (node.getFeature().getType().equalsIgnoreCase("Continuous")) {
             ContinuousTreeNode continuousTreeNode = (ContinuousTreeNode) node;
-            if (null != continuousTreeNode.leftNode &&!continuousTreeNode.leftNode.isLeaf()) {
+            if (null != continuousTreeNode.leftNode && !continuousTreeNode.leftNode.isLeaf()) {
                 count += countMisclassified(continuousTreeNode.leftNode.countPerClassLabel);
             }
 

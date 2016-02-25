@@ -5,6 +5,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Created by jay on 2/10/16.
@@ -94,17 +95,23 @@ public class ReadDataSet {
     }
 
     private static void runCrossValidation(DataSet dataSet, DataSet testDataset, String splitOn, String treeType, String evalType, int topTrees) {
+
         int folds = 10;
+        List<Instance> validationDataset = null;
         CrossValidation crossValidation = new CrossValidation(dataSet, testDataset, folds);
 
         for (int i = 1; i <=folds; i++) {
             System.out.println("--------------------- fold ------  " + i);
             crossValidation.getDataSetForCurrentFold(i);
             dataSet = crossValidation.getDataSet();
+            if(evalType.equalsIgnoreCase("Validation Set") || evalType.equals("2")){
+                validationDataset = getValidationDataset(dataSet);
+                dataSet.instances = (ArrayList<Instance>) getInstancesForTrain(dataSet);
+            }
             testDataset = crossValidation.getTestDataset();
 
             TreeNode treeNode;
-            DecisionTree decisionTree = new DecisionTree(dataSet, splitOn,treeType,evalType,topTrees);
+            DecisionTree decisionTree = new DecisionTree(dataSet, splitOn,treeType,evalType,topTrees,validationDataset);
             treeNode = decisionTree.buildTree();
 
             testDataset.features = dataSet.features;
@@ -114,6 +121,28 @@ public class ReadDataSet {
 
             calculateAccuracy(testDataset);
         }
+    }
+
+    private static List<Instance> getInstancesForTrain(DataSet dataSet) {
+
+        int size = (int) (0.75 * dataSet.instances.size());
+
+        return dataSet.instances
+                .stream()
+                .skip(0)
+                .limit(size)
+                .collect(Collectors.toList());
+    }
+
+    private static List<Instance> getValidationDataset(DataSet dataSet) {
+        int size = dataSet.instances.size();
+
+        int validationSize  = (int) (0.25 * size);
+
+        return dataSet.instances.stream()
+                .skip(size - validationSize)
+                .limit(validationSize)
+                .collect(Collectors.toList());
     }
 
     private static void calculateAccuracy(DataSet testDataset) {
