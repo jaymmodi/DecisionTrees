@@ -32,8 +32,8 @@ public class ReadDataSet {
 
         String treeType = getTreeType(br);
 
-        String evalType = null;
-        if(treeType.equalsIgnoreCase("Prune") || treeType.equalsIgnoreCase("2")){
+        String evalType = "";
+        if (treeType.equalsIgnoreCase("Prune") || treeType.equalsIgnoreCase("2")) {
             System.out.println("Select the method to evaluate the overfitting prevention ");
             System.out.println("1. Pessimistic Error 2. Validation Set  3. MDLP");
 
@@ -44,8 +44,8 @@ public class ReadDataSet {
             }
         }
 
-        int topTrees=0;
-        if(treeType.equalsIgnoreCase("Parallel") || treeType.equalsIgnoreCase("3")){
+        int topTrees = 0;
+        if (treeType.equalsIgnoreCase("Parallel") || treeType.equalsIgnoreCase("3")) {
             System.out.println("Please enter a number to select top trees but less than " + dataSet.totalFeatures);
 
             try {
@@ -55,7 +55,74 @@ public class ReadDataSet {
             }
         }
 
-        runCrossValidation(dataSet, testDataset, splitOn, treeType,evalType,topTrees);
+        runCrossValidation(dataSet, testDataset, splitOn, treeType, evalType, topTrees);
+        System.out.println(" To get measures on whole data set the data has been changed to binary class variables");
+        changeDataSetToBinary(dataSet, testDataset);
+        trainAndTestOnBinary(dataSet, testDataset, splitOn, treeType, evalType);
+        printMeasures(testDataset);
+    }
+
+    private static void printMeasures(DataSet testDataset) {
+        int truePositive = 0;
+        int falsePositive = 0;
+        int trueNegative = 0;
+        int falseNegative = 0;
+
+        for (Instance instance : testDataset.instances) {
+            if (instance.trueLabel.equals("1") && instance.classifiedLabel.equals("1")) {
+                truePositive++;
+            } else if (instance.trueLabel.equals("0") && instance.classifiedLabel.equals("0")) {
+                trueNegative++;
+            } else if (instance.trueLabel.equals("1") && instance.classifiedLabel.equals("0")) {
+                falseNegative++;
+            } else {
+                falsePositive++;
+            }
+        }
+
+        Measure allMeasures = new Measure(truePositive,trueNegative,falsePositive,falseNegative);
+
+        System.out.println("falsePositive = " + allMeasures.falsePositive);
+        System.out.println("falseNegative = " + allMeasures.falseNegative);
+        System.out.println("trueNegative = " + allMeasures.trueNegative);
+        System.out.println("truePositive = " + allMeasures.truePositive);
+        System.out.println("getAccuracy() = " + allMeasures.getAccuracy());
+        System.out.println("getBalancedAccuracy() = " + allMeasures.getBalancedAccuracy());
+        System.out.println("getSensitivity() = " + allMeasures.getSensitivity());
+        System.out.println("getSpecificity() = " + allMeasures.getSpecificity());
+        System.out.println("getF1Score() = " + allMeasures.getF1Score());
+    }
+
+    private static void trainAndTestOnBinary(DataSet dataSet, DataSet testDataset, String splitOn, String treeType, String evalType) {
+        DecisionTree decisionTree = new DecisionTree(dataSet, splitOn, treeType, evalType, 0, null);
+
+        TreeNode treeNode = decisionTree.buildTree();
+
+        decisionTree.classify(testDataset, treeNode);
+    }
+
+    private static void changeDataSetToBinary(DataSet dataSet, DataSet testDataset) {
+        String classLabel = dataSet.classLabels.get(0);
+
+        System.out.println("The problem has changed to classifying " + classLabel + " vs non - " + classLabel);
+
+        for (Instance instance : dataSet.instances) {
+            if (instance.trueLabel.equalsIgnoreCase(classLabel)) {
+                instance.trueLabel = "1";
+            } else {
+                instance.trueLabel = "0";
+            }
+        }
+
+        for (Instance instance : testDataset.instances) {
+            if (instance.trueLabel.equalsIgnoreCase(classLabel)) {
+                instance.trueLabel = "1";
+            } else {
+                instance.trueLabel = "0";
+            }
+        }
+
+
     }
 
     private static String getTreeType(BufferedReader br) {
@@ -100,18 +167,18 @@ public class ReadDataSet {
         List<Instance> validationDataset = null;
         CrossValidation crossValidation = new CrossValidation(dataSet, testDataset, folds);
 
-        for (int i = 1; i <=folds; i++) {
+        for (int i = 1; i <= folds; i++) {
             System.out.println("--------------------- fold ------  " + i);
             crossValidation.getDataSetForCurrentFold(i);
             dataSet = crossValidation.getDataSet();
-            if(evalType.equalsIgnoreCase("Validation Set") || evalType.equals("2")){
+            if (evalType.equalsIgnoreCase("Validation Set") || evalType.equals("2")) {
                 validationDataset = getValidationDataset(dataSet);
                 dataSet.instances = (ArrayList<Instance>) getInstancesForTrain(dataSet);
             }
             testDataset = crossValidation.getTestDataset();
 
             TreeNode treeNode;
-            DecisionTree decisionTree = new DecisionTree(dataSet, splitOn,treeType,evalType,topTrees,validationDataset);
+            DecisionTree decisionTree = new DecisionTree(dataSet, splitOn, treeType, evalType, topTrees, validationDataset);
             treeNode = decisionTree.buildTree();
 
             testDataset.features = dataSet.features;
@@ -119,12 +186,23 @@ public class ReadDataSet {
 
             decisionTree.classify(testDataset, treeNode);
 
-            calculateAccuracy(testDataset);
+            calculateAccuracy(testDataset, crossValidation.foldAccuracy);
+
+            getAverageAccuracy(crossValidation.foldAccuracy);
         }
     }
 
-    private static List<Instance> getInstancesForTrain(DataSet dataSet) {
+    private static void getAverageAccuracy(List<Double> foldAccuracy) {
+        double avg = foldAccuracy
+                .stream()
+                .mapToDouble(Double::doubleValue)
+                .average()
+                .getAsDouble();
 
+        System.out.println("Average Accuracy after 10 fold Cross Validation " + avg);
+    }
+
+    private static List<Instance> getInstancesForTrain(DataSet dataSet) {
         int size = (int) (0.75 * dataSet.instances.size());
 
         return dataSet.instances
@@ -137,7 +215,7 @@ public class ReadDataSet {
     private static List<Instance> getValidationDataset(DataSet dataSet) {
         int size = dataSet.instances.size();
 
-        int validationSize  = (int) (0.25 * size);
+        int validationSize = (int) (0.25 * size);
 
         return dataSet.instances.stream()
                 .skip(size - validationSize)
@@ -145,12 +223,14 @@ public class ReadDataSet {
                 .collect(Collectors.toList());
     }
 
-    private static void calculateAccuracy(DataSet testDataset) {
+    private static void calculateAccuracy(DataSet testDataset, List<Double> foldAccuracy) {
         int count = (int) testDataset.instances.stream()
                 .filter(instance -> instance.trueLabel.equalsIgnoreCase(instance.classifiedLabel))
                 .count();
 
-        System.out.println(count * 100 / (double) testDataset.instances.size());
+        double accuracy = count * 100 / (double) testDataset.instances.size();
+        foldAccuracy.add(accuracy);
+        System.out.println(accuracy);
 
     }
 

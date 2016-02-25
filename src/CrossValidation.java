@@ -12,13 +12,23 @@ public class CrossValidation {
     private final DataSet testDataset;
     private final int folds;
     private List<ArrayList<Instance>> allLists;
+    public List<Double> foldAccuracy;
 
     public CrossValidation(DataSet dataSet, DataSet testDataset, int folds) {
 
         this.dataSet = dataSet;
         this.testDataset = testDataset;
         this.folds = folds;
+        this.foldAccuracy = new ArrayList<>();
         splitData();
+    }
+
+    public List<Double> getFoldAccuracy() {
+        return foldAccuracy;
+    }
+
+    public void setFoldAccuracy(List<Double> foldAccuracy) {
+        this.foldAccuracy = foldAccuracy;
     }
 
     public DataSet getTestDataset() {
