@@ -56,7 +56,7 @@ public class ParallelTree {
         ArrayList<ArrayList<Instance>> splitData = this.decisionTree.splitData(continuousTreeNode.recordsOnNode, feature);
 
         if (isDataSetZeroSize(splitData)) {
-            // make this node as leaf
+            //
             Tree tempTree = makeTree(bestTree, continuousTreeNode, null, "any");
             return Collections.singletonList(tempTree);
         }
@@ -118,12 +118,17 @@ public class ParallelTree {
         Tree tree = copyTree(bestTree);
 
         if (tree.queue == null) {
-            tree.queue = new LinkedList<>(bestTree.queue);
+            tree.queue = new LinkedList<>();
+            for (TreeNode treeNode : bestTree.queue) {
+                TreeNode temp = findNode(tree, (ContinuousTreeNode) treeNode);
+                tree.queue.add(temp);
+            }
         }
 
         TreeNode parent = findNode(tree, findThisNode);
         if (childNode == null) {
             this.decisionTree.makeCurrentNodeAsLeaf(parent);
+            parent.isLeaf = true;
             tree.splitCount = bestTree.splitCount - 1;
             tree.leafNodes = bestTree.leafNodes - 1;
         } else {
@@ -139,11 +144,13 @@ public class ParallelTree {
                 }
             }
 
-            if (((ContinuousTreeNode) continuousTreeNode.parentNode).rightNode == null) {
-                TreeNode parentInNew = findNode(tree, (ContinuousTreeNode) continuousTreeNode.parentNode);
-                tree.queue.add(parentInNew);
+            if (parent != null && ((ContinuousTreeNode) parent).rightNode == null) {
+//                TreeNode parentInNew = findNode(tree, (ContinuousTreeNode) continuousTreeNode.parentNode);
+                tree.queue.add(parent);
             }
+
             tree.queue.add(childNode);
+
             if (!childNode.isLeaf) {
                 tree.splitCount = bestTree.splitCount + 1;
                 tree.leafNodes = bestTree.leafNodes + 1;
@@ -297,7 +304,8 @@ public class ParallelTree {
             return null;
         }
         ContinuousTreeNode continuousRoot = (ContinuousTreeNode) root;
-        ContinuousTreeNode continuousNewRoot = new ContinuousTreeNode(continuousRoot, this.decisionTree.dataset, parent);
+        ContinuousTreeNode continuousNewRoot = new ContinuousTreeNode(continuousRoot, this.decisionTree.dataset);
+        continuousNewRoot.parentNode = parent;
 
         continuousNewRoot.leftNode = copyAndMakeTree(continuousRoot.leftNode, continuousNewRoot);
         continuousNewRoot.rightNode = copyAndMakeTree(continuousRoot.rightNode, continuousNewRoot);
