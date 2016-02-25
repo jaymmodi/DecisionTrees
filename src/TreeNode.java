@@ -15,10 +15,19 @@ public class TreeNode {
     public List<Feature> remainingFeatures;
     public String label;
     public List<Instance> recordsOnNode;
+    public double probabilisticOutput;
 
     public TreeNode(DataSet dataset) {
         this.dataSet = dataset;
         this.recordsOnNode = new ArrayList<>();
+    }
+
+    public double getProbabilisticOutput() {
+        return probabilisticOutput;
+    }
+
+    public void setProbabilisticOutput(double probabilisticOutput) {
+        this.probabilisticOutput = probabilisticOutput;
     }
 
 

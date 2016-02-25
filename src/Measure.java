@@ -52,15 +52,15 @@ public class Measure {
     }
 
     public double getSensitivity() {
-        return (this.truePositive) / (this.truePositive + this.falseNegative);
+        return (this.truePositive) / (double) (this.truePositive + this.falseNegative);
     }
 
     public double getSpecificity() {
-        return (this.trueNegative) / (this.trueNegative + this.falsePositive);
+        return (this.trueNegative) / (double) (this.trueNegative + this.falsePositive);
     }
 
     public double getF1Score() {
-        return (2 * this.truePositive) / (2 * truePositive + this.falsePositive + this.falseNegative);
+        return (2 * this.truePositive) / (double) (2 * truePositive + this.falsePositive + this.falseNegative);
     }
 
     public double getBalancedAccuracy() {

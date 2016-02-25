@@ -57,9 +57,16 @@ public class ReadDataSet {
 
         runCrossValidation(dataSet, testDataset, splitOn, treeType, evalType, topTrees);
         System.out.println(" To get measures on whole data set the data has been changed to binary class variables");
-        changeDataSetToBinary(dataSet, testDataset);
-        trainAndTestOnBinary(dataSet, testDataset, splitOn, treeType, evalType);
-        printMeasures(testDataset);
+//        changeDataSetToBinary(dataSet, testDataset);
+//        trainAndTestOnBinary(dataSet, testDataset, splitOn, treeType, evalType);
+//        printMeasures(testDataset);
+//
+//        drawROC(testDataset);
+    }
+
+    private static void drawROC(DataSet testDataset) {
+
+        testDataset.instances.forEach(instance -> System.out.println(instance.probabilisticOutput + " " + instance.trueLabel));
     }
 
     private static void printMeasures(DataSet testDataset) {
@@ -80,7 +87,7 @@ public class ReadDataSet {
             }
         }
 
-        Measure allMeasures = new Measure(truePositive,trueNegative,falsePositive,falseNegative);
+        Measure allMeasures = new Measure(truePositive, trueNegative, falsePositive, falseNegative);
 
         System.out.println("falsePositive = " + allMeasures.falsePositive);
         System.out.println("falseNegative = " + allMeasures.falseNegative);
@@ -105,6 +112,7 @@ public class ReadDataSet {
         String classLabel = dataSet.classLabels.get(0);
 
         System.out.println("The problem has changed to classifying " + classLabel + " vs non - " + classLabel);
+        dataSet.positiveClass = "1";
 
         for (Instance instance : dataSet.instances) {
             if (instance.trueLabel.equalsIgnoreCase(classLabel)) {
@@ -188,8 +196,8 @@ public class ReadDataSet {
 
             calculateAccuracy(testDataset, crossValidation.foldAccuracy);
 
-            getAverageAccuracy(crossValidation.foldAccuracy);
         }
+        getAverageAccuracy(crossValidation.foldAccuracy);
     }
 
     private static void getAverageAccuracy(List<Double> foldAccuracy) {
@@ -256,7 +264,7 @@ public class ReadDataSet {
                 Instance row = new Instance();
                 List<Double> featureValues = new ArrayList<>();
 
-                String perLine[] = line.split("\t");
+                String perLine[] = line.split(",");
 
                 for (int i = 0; i < dataSet.totalFeatures; i++) {
                     featureValues.add(Double.valueOf(perLine[i]));

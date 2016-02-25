@@ -9,6 +9,15 @@ public class Instance {
     List<Double> featureValues;
     String trueLabel;
     String classifiedLabel;
+    double probabilisticOutput;
+
+    public double getProbabilisticOutput() {
+        return probabilisticOutput;
+    }
+
+    public void setProbabilisticOutput(double probabilisticOutput) {
+        this.probabilisticOutput = probabilisticOutput;
+    }
 
     public String getClassifiedLabel() {
         return classifiedLabel;

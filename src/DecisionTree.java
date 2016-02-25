@@ -68,7 +68,7 @@ public class DecisionTree {
         int leafCount = 1;
         int misclassifiedCount = countMisclassified(classLabelCount);
         double initialScore = getScore(evalType, leafCount, misclassifiedCount, split, null);
-        System.out.println("initialScore = " + initialScore);
+//        System.out.println("initialScore = " + initialScore);
 
         TreeNode root = getRootNode();
 
@@ -86,7 +86,7 @@ public class DecisionTree {
                 if (!node.isLeaf()) {
                     misclassifiedCount = getMisclassifiedCountAfterSplit(node);
                     afterScore = getScore(evalType, split + 1, misclassifiedCount, split, root);
-                    System.out.println("afterScore = " + afterScore);
+//                    System.out.println("afterScore = " + afterScore);
                 }
             }
             if (afterScore > initialScore) {
@@ -102,15 +102,17 @@ public class DecisionTree {
     private void removeLast(Queue<TreeNode> queue) {
         TreeNode first = queue.peek();
         TreeNode current;
-
-        while (true) {
-            current = queue.poll();
-            if (first == queue.peek()) {
-                break;
+        if (queue.size() == 1) {
+            queue.poll();
+        } else {
+            while (true) {
+                current = queue.poll();
+                if (first == queue.peek()) {
+                    break;
+                }
+                queue.add(current);
             }
-            queue.add(current);
         }
-
     }
 
     private double getScore(String evalType, int leafCount, int misclassifiedCount, int nodeCount, TreeNode root) {
@@ -174,9 +176,9 @@ public class DecisionTree {
                     ContinuousTreeNode continuousTreeNode = (ContinuousTreeNode) root;
 //                    ContinuousTreeNode parent = continuousTreeNode;
                     if (value <= splitValue) {
-                        traverseForValidation(validationInstance, continuousTreeNode.leftNode,continuousTreeNode);
+                        traverseForValidation(validationInstance, continuousTreeNode.leftNode, continuousTreeNode);
                     } else {
-                        traverseForValidation(validationInstance, continuousTreeNode.rightNode,continuousTreeNode);
+                        traverseForValidation(validationInstance, continuousTreeNode.rightNode, continuousTreeNode);
                     }
                 }
 
@@ -270,6 +272,7 @@ public class DecisionTree {
             for (Map.Entry<String, Integer> stringIntegerEntry : node.countPerClassLabel.entrySet()) {
                 node.label = stringIntegerEntry.getKey();
             }
+            node.probabilisticOutput = getProbability(node);
         } else {
             List<Feature> bestFeatures = getTopFeatures(instances, remainingFeatures);
 
@@ -453,6 +456,7 @@ public class DecisionTree {
         }
 
         node.label = label;
+        node.probabilisticOutput = getProbability(node);
     }
 
     private TreeNode makeNode(Feature bestFeature) {
@@ -556,13 +560,14 @@ public class DecisionTree {
     public void classify(DataSet testDataset, TreeNode treeNode) {
         testDataset.instances.forEach(instance -> {
             traverseTree(instance, treeNode);
-            System.out.println(instance.getTrueLabel() + "   " + instance.getClassifiedLabel());
+//            System.out.println(instance.getTrueLabel() + "   " + instance.getClassifiedLabel());
         });
     }
 
     private void traverseTree(Instance instance, TreeNode treeNode) {
         if (treeNode.isLeaf()) {
             instance.classifiedLabel = treeNode.label;
+            instance.probabilisticOutput = getProbability(treeNode);
         } else {
             Feature feature = treeNode.feature;
             int index = feature.index;
@@ -584,6 +589,16 @@ public class DecisionTree {
             }
 
         }
+    }
+
+    private double getProbability(TreeNode treeNode) {
+        HashMap<String, Integer> countPerClassLabel = treeNode.countPerClassLabel;
+
+        int count = 0;
+        if (countPerClassLabel.containsKey(this.dataset.positiveClass)) {
+            count = countPerClassLabel.get(this.dataset.positiveClass);
+        }
+        return count / (double) treeNode.recordsOnNode.size();
     }
 
 }

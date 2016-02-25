@@ -11,8 +11,17 @@ public class DataSet {
     public ArrayList<String> classLabels;
     public String pathToTrainFile;
     public ArrayList<Instance> instances;
+    String positiveClass;
 
     public DataSet() {
+    }
+
+    public String getPositiveClass() {
+        return positiveClass;
+    }
+
+    public void setPositiveClass(String positiveClass) {
+        this.positiveClass = positiveClass;
     }
 
     public ArrayList<Feature> getFeatures() {

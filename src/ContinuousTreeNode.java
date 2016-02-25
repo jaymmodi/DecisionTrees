@@ -13,7 +13,7 @@ public class ContinuousTreeNode extends TreeNode {
         this.rightNode = null;
     }
 
-    public ContinuousTreeNode(ContinuousTreeNode c,DataSet dataSet){
+    public ContinuousTreeNode(ContinuousTreeNode c, DataSet dataSet) {
         super(dataSet);
         this.splitValue = c.splitValue;
         this.leftNode = null;
@@ -24,6 +24,7 @@ public class ContinuousTreeNode extends TreeNode {
         this.remainingFeatures = c.remainingFeatures;
         this.countPerClassLabel = c.countPerClassLabel;
         this.isLeaf = c.isLeaf;
+        this.probabilisticOutput = c.probabilisticOutput;
     }
 
     public double getSplitValue() {
