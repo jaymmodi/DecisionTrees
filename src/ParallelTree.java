@@ -49,7 +49,6 @@ public class ParallelTree {
     }
 
     private List<Tree> makeChildNodes(Tree bestTree, TreeNode node, Queue<TreeNode> queue) {
-        //           update queue
         List<Tree> mTrees = new ArrayList<>();
         ContinuousTreeNode continuousTreeNode = (ContinuousTreeNode) node;
         Feature feature = continuousTreeNode.feature;
@@ -114,7 +113,6 @@ public class ParallelTree {
 
     private Tree makeTree(Tree bestTree, ContinuousTreeNode findThisNode, TreeNode childNode, String leftOrRight) {
 
-//        tree.treeNode = new ContinuousTreeNode((ContinuousTreeNode) bestTree.treeNode, this.decisionTree.dataset);
         Tree tree = copyTree(bestTree);
 
         if (tree.queue == null) {
@@ -132,7 +130,6 @@ public class ParallelTree {
             tree.splitCount = bestTree.splitCount - 1;
             tree.leafNodes = bestTree.leafNodes - 1;
         } else {
-            ContinuousTreeNode continuousTreeNode = (ContinuousTreeNode) childNode;
 
             if (leftOrRight.equalsIgnoreCase("left")) {
                 if (parent != null) {
@@ -145,7 +142,6 @@ public class ParallelTree {
             }
 
             if (parent != null && ((ContinuousTreeNode) parent).rightNode == null) {
-//                TreeNode parentInNew = findNode(tree, (ContinuousTreeNode) continuousTreeNode.parentNode);
                 tree.queue.add(parent);
             }
 
