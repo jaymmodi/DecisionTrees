@@ -64,7 +64,7 @@ public class Measure {
     }
 
     public double getBalancedAccuracy() {
-        return (getSensitivity() + getSensitivity()) / 2;
+        return ((getSensitivity() + getSpecificity()) / 2.0);
     }
 }
 

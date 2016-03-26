@@ -4,6 +4,7 @@
 .mtj.tmp/
 .idea/
 DecisionTrees.iml
+.fuse*
 
 # Package Files #
 *.jar

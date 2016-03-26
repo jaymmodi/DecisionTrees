@@ -1,5 +1,5 @@
-/media/jay/DDrive/Jay/IUB/Spring 2016/Data Sets/train/breast-cancer/data.csv
-9
-Clump Thickness,Uniformity of Cell Size,Uniformity of Cell Shape,Marginal Adhesion,Single Epithelial Cell Size,Bare Nuclei,Bland Chromatin,Normal Nucleoli, Mitoses
-continuous,continuous,continuous,continuous,continuous,continuous,continuous,continuous,continuous
-2,4
+/media/jay/DDrive/Jay/IUB/Spring 2016/Data Sets/train/Iris/sample.csv
+4
+sepal_length,sepal_width,petal_length,petal_width
+continuous,continuous,continuous,continuous
+Iris-setosa,Iris-versicolor,Iris-virginica

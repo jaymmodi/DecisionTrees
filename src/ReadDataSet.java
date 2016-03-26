@@ -56,7 +56,7 @@ public class ReadDataSet {
         }
 
         runCrossValidation(dataSet, testDataset, splitOn, treeType, evalType, topTrees);
-        System.out.println(" To get measures on whole data set the data has been changed to binary class variables");
+
 //        changeDataSetToBinary(dataSet, testDataset);
 //        trainAndTestOnBinary(dataSet, testDataset, splitOn, treeType, evalType);
 //        printMeasures(testDataset);
@@ -100,8 +100,8 @@ public class ReadDataSet {
         System.out.println("getF1Score() = " + allMeasures.getF1Score());
     }
 
-    private static void trainAndTestOnBinary(DataSet dataSet, DataSet testDataset, String splitOn, String treeType, String evalType) {
-        DecisionTree decisionTree = new DecisionTree(dataSet, splitOn, treeType, evalType, 0, null);
+    private static void trainAndTestOnBinary(DataSet dataSet, DataSet testDataset, String splitOn, String treeType, String evalType, List<Instance> validationDataset) {
+        DecisionTree decisionTree = new DecisionTree(dataSet, splitOn, treeType, evalType, 0, validationDataset);
 
         TreeNode treeNode = decisionTree.buildTree();
 
@@ -195,6 +195,15 @@ public class ReadDataSet {
             decisionTree.classify(testDataset, treeNode);
 
             calculateAccuracy(testDataset, crossValidation.foldAccuracy);
+
+            if(i == folds){
+                System.out.println(" To get measures on whole data set the data has been changed to binary class variables");
+                changeDataSetToBinary(dataSet, testDataset);
+                trainAndTestOnBinary(dataSet, testDataset, splitOn, treeType, evalType,validationDataset);
+                printMeasures(testDataset);
+
+                drawROC(testDataset);
+            }
 
         }
         getAverageAccuracy(crossValidation.foldAccuracy);
